@@ -7,9 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
-add_subdirectory(libs/SDL EXCLUDE_FROM_ALL)
 
-# Add the src folder (which includes the main executable)
-add_subdirectory(src)
+set(SDL_SHARED ON CACHE BOOL "Build shared lib")
+set(SDL_STATIC OFF CACHE BOOL "Disable static lib")
 
-target_link_libraries(fg_3d PRIVATE SDL3::SDL3)
+add_subdirectory(${CMAKE_SOURCE_DIR}/libs/SDL EXCLUDE_FROM_ALL)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/src)
