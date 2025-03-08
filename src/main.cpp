@@ -3,6 +3,5 @@
 
 int main (int argc, char *argv[]) {
   VirtualController vc;
-
   return 0;
 }
