@@ -26,6 +26,6 @@ private:
   InputEvent inputHistory[120][8];
   uint16_t currentState;
   uint16_t prevState;
-  int eventCounts[120] = {0};
+  int eventCounter[120] = {0};
   int historyIndex = 0;
 };
