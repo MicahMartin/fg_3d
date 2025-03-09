@@ -4,13 +4,10 @@
 constexpr int MAX_HISTORY{ 60 };
 constexpr int MAX_EVENTS_PER_FRAME{ 16 };
 
-struct InputEvent {
-  uint16_t inputBit = -1;
-  bool pressed = true;
-  bool valid = true;
-
-  InputEvent(uint16_t inputBit, bool pressed) : inputBit(inputBit), pressed(pressed) {}
-  InputEvent(){}
+struct InputFrame {
+  uint16_t pressedBits;
+  uint16_t releasedBits;
+  uint16_t validBits;
 };
 
 namespace Input {
@@ -57,8 +54,9 @@ public:
 
   void update(uint16_t input);
 
-  inline bool isPressed(uint16_t input, bool strict = true) noexcept;
-  inline bool wasPressed(uint16_t input, bool strict = true, int index = 0, bool pressed = true) noexcept;
+  bool isPressed(uint16_t input, bool strict = true);
+  bool wasPressed(uint16_t input, bool strict = true, int index = 0, bool pressed = true);
+  bool wasPressedBuffer(uint16_t input, bool strict = true, bool pressed = true);
 
   void printHistory();
   uint16_t getCurrentState();
@@ -66,7 +64,9 @@ private:
   void shiftHistory(); // We could use the old school ring buffer approach, 
                        // but why? we flatten it every frame to serialize anyway
   uint16_t cleanSOCD(uint16_t input);
-  InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
+  // InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
+  InputFrame inputHistory[MAX_HISTORY];
+
   int eventCounter[MAX_HISTORY] = {0};
   int historyIndex{ 0 };
   uint16_t currentState{ 0 };

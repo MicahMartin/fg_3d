@@ -42,7 +42,9 @@ int main (int argc, char *argv[]) {
 
       vc.update(constructInput());
       printf("%d\n", frameCount);
-      vc.printHistory();
+      if (vc.wasPressed(Input::LIGHT_P, true, 23, true)) {
+        quit = true;
+      }
 
       SDL_FillSurfaceRect(gScreenSurface, nullptr, SDL_MapSurfaceRGB(gScreenSurface, 0xFF, 0xFF, 0xFF));
       SDL_UpdateWindowSurface(gWindow);
