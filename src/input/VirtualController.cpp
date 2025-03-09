@@ -1,4 +1,5 @@
 #include "VirtualController.h"
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <bitset>
@@ -12,7 +13,7 @@ void VirtualController::update(uint16_t input){
   int& currentEventCount = eventCounter[0];
 
   prevState = currentState;
-  currentState = input;
+  currentState = cleanSOCD(input);
 
   uint16_t changedButtons = prevState ^ currentState;
   uint16_t pressed = changedButtons & currentState;
@@ -49,7 +50,7 @@ void VirtualController::printHistory(){
   }
 }
 
-void VirtualController::shiftHistory() {
+void VirtualController::shiftHistory(){
     static_assert(std::is_trivially_copyable_v<InputEvent>, "InputEvent must be trivially copyable");
 
     // Shift event counters
@@ -61,4 +62,16 @@ void VirtualController::shiftHistory() {
     // Clear new frame
     eventCounter[0] = 0;
     std::memset(inputHistory[0], 0, sizeof(inputHistory[0]));
+}
+
+uint16_t VirtualController::cleanSOCD(uint16_t input){
+  uint16_t horizontal = input & Input::HORIZONTAL_OCD;
+  if (horizontal == Input::HORIZONTAL_OCD)
+    input &= ~Input::HORIZONTAL_OCD;
+
+  uint16_t vertical = input & Input::VERTICAL_OCD;
+  if (vertical == Input::VERTICAL_OCD)
+    input &= ~Input::VERTICAL_OCD;
+
+  return input;
 }

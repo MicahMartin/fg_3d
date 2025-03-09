@@ -29,6 +29,7 @@ public:
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, 
                        // but why? we flatten it every frame to serialize anyway
+  uint16_t cleanSOCD(uint16_t input);
   InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
   int eventCounter[MAX_HISTORY] = {0};
   int historyIndex{ 0 };
@@ -64,5 +65,7 @@ namespace Input {
     DOWNRIGHT = (DOWN | RIGHT),
     UPLEFT = (UP | LEFT),
     UPRIGHT = (UP | RIGHT),
+    HORIZONTAL_OCD = (LEFT | RIGHT),
+    VERTICAL_OCD = (UP | DOWN),
   };
 }
