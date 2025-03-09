@@ -28,7 +28,7 @@ void VirtualController::update(uint16_t input){
 
   while (released && currentEventCount < MAX_EVENTS_PER_FRAME) {
     uint16_t mask = released & -released; 
-    eventFrame[eventCounter[0]++] = InputEvent(mask, false);
+    eventFrame[currentEventCount++] = InputEvent(mask, false);
     released ^= mask;
   }
 }
