@@ -13,30 +13,6 @@ struct InputEvent {
   InputEvent(){}
 };
 
-class VirtualController {
-public:
-  VirtualController();
-  VirtualController(VirtualController &&) = default;
-  VirtualController(const VirtualController &) = default;
-  VirtualController &operator=(VirtualController &&) = default;
-  VirtualController &operator=(const VirtualController &) = default;
-  ~VirtualController();
-
-  void update(uint16_t input);
-  void printHistory();
-  uint16_t getCurrentState();
-
-private:
-  void shiftHistory(); // We could use the old school ring buffer approach, 
-                       // but why? we flatten it every frame to serialize anyway
-  uint16_t cleanSOCD(uint16_t input);
-  InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
-  int eventCounter[MAX_HISTORY] = {0};
-  int historyIndex{ 0 };
-  uint16_t currentState{ 0 };
-  uint16_t prevState{ 0 };
-};
-
 namespace Input {
   enum InputMasks : uint16_t {
     NOINPUT = 0,
@@ -69,3 +45,30 @@ namespace Input {
     VERTICAL_OCD = (UP | DOWN),
   };
 }
+
+class VirtualController {
+public:
+  VirtualController();
+  VirtualController(VirtualController &&) = default;
+  VirtualController(const VirtualController &) = default;
+  VirtualController &operator=(VirtualController &&) = default;
+  VirtualController &operator=(const VirtualController &) = default;
+  ~VirtualController();
+
+  void update(uint16_t input);
+
+  inline bool isPressed(uint16_t input, bool strict = true) noexcept;
+  inline bool wasPressed(uint16_t input, bool strict = true, int index = 0, bool pressed = true) noexcept;
+
+  void printHistory();
+  uint16_t getCurrentState();
+private:
+  void shiftHistory(); // We could use the old school ring buffer approach, 
+                       // but why? we flatten it every frame to serialize anyway
+  uint16_t cleanSOCD(uint16_t input);
+  InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
+  int eventCounter[MAX_HISTORY] = {0};
+  int historyIndex{ 0 };
+  uint16_t currentState{ 0 };
+  uint16_t prevState{ 0 };
+};

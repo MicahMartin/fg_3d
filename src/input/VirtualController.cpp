@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iostream>
 #include <bitset>
+#include <sys/types.h>
 
 VirtualController::VirtualController(){};
 VirtualController::~VirtualController(){};
@@ -15,7 +16,7 @@ void VirtualController::update(uint16_t input){
   prevState = currentState;
   currentState = cleanSOCD(input);
 
-  uint16_t changedButtons = prevState ^ currentState;
+  const uint16_t changedButtons = prevState ^ currentState;
   uint16_t pressed = changedButtons & currentState;
   uint16_t released = changedButtons & prevState;
 
@@ -31,6 +32,38 @@ void VirtualController::update(uint16_t input){
     eventFrame[currentEventCount++] = InputEvent(mask, false);
     released ^= mask;
   }
+}
+
+inline bool VirtualController::isPressed(uint16_t input, bool strict) noexcept {
+    const uint16_t direction_mask = 0x0F;
+    const uint16_t current_dir = currentState & direction_mask;
+    
+    return ((input < 16) & strict) ? (current_dir == input) : (currentState & input);
+}
+
+inline bool VirtualController::wasPressed(uint16_t input, bool strict, int index, bool pressed) noexcept {
+  if (index >= MAX_HISTORY || index < 0)
+    return false;
+
+  const InputEvent* eventList = inputHistory[index];
+  const int eventCount = eventCounter[index];
+
+  if (eventCount == 0)
+    return false;
+
+  const uint16_t strictMask = strict ? 0x0F : 0xFFFF;
+  const uint16_t targetBits = (strict && input <= 10) ? (input) : (input & strictMask);
+
+  for (int i = 0; i < eventCount; i++) {
+    const InputEvent& event = eventList[i];
+    if (event.valid && (event.pressed == pressed)) {
+      const uint16_t eventBits = event.inputBit & strictMask;
+      if (eventBits & targetBits) {
+        return strict ? (eventBits == targetBits) : true;
+      }
+    }
+  }
+  return false;
 }
 
 uint16_t VirtualController::getCurrentState(){
@@ -65,11 +98,11 @@ void VirtualController::shiftHistory(){
 }
 
 uint16_t VirtualController::cleanSOCD(uint16_t input){
-  uint16_t horizontal = input & Input::HORIZONTAL_OCD;
+  const uint16_t horizontal = input & Input::HORIZONTAL_OCD;
   if (horizontal == Input::HORIZONTAL_OCD)
     input &= ~Input::HORIZONTAL_OCD;
 
-  uint16_t vertical = input & Input::VERTICAL_OCD;
+  const uint16_t vertical = input & Input::VERTICAL_OCD;
   if (vertical == Input::VERTICAL_OCD)
     input &= ~Input::VERTICAL_OCD;
 
