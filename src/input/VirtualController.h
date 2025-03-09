@@ -24,19 +24,16 @@ public:
 
   void update(uint16_t input);
   void printHistory();
-
-
-  // getters
   uint16_t getCurrentState();
+
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, 
                        // but why? we flatten it every frame to serialize anyway
-  uint16_t currentState;
-  uint16_t prevState;
-
   InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
   int eventCounter[MAX_HISTORY] = {0};
-  int historyIndex = 0;
+  int historyIndex{ 0 };
+  uint16_t currentState{ 0 };
+  uint16_t prevState{ 0 };
 };
 
 namespace Input {

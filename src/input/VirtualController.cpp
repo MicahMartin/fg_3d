@@ -1,4 +1,5 @@
 #include "VirtualController.h"
+#include <cstring>
 #include <iostream>
 #include <bitset>
 
@@ -6,8 +7,9 @@ VirtualController::VirtualController(){};
 VirtualController::~VirtualController(){};
 
 void VirtualController::update(uint16_t input){
-  eventCounter[historyIndex] = 0;
-  InputEvent* eventFrame = inputHistory[historyIndex];
+  shiftHistory();
+  InputEvent* eventFrame = inputHistory[0];
+  int& currentEventCount = eventCounter[0];
 
   prevState = currentState;
   currentState = input;
@@ -16,23 +18,18 @@ void VirtualController::update(uint16_t input){
   uint16_t pressed = changedButtons & currentState;
   uint16_t released = changedButtons & prevState;
 
-  while (pressed) {
+  // basically loops through an int's bitflags. cool pattern
+  while (pressed && currentEventCount < MAX_EVENTS_PER_FRAME) {
     uint16_t mask = pressed & -pressed;
-    if (eventCounter[historyIndex] < MAX_EVENTS_PER_FRAME) {
-      eventFrame[eventCounter[historyIndex]++] = InputEvent(mask, true);
-    }
+    eventFrame[currentEventCount++] = InputEvent(mask, true);
     pressed ^= mask;
   }
 
-  while (released) {
+  while (released && currentEventCount < MAX_EVENTS_PER_FRAME) {
     uint16_t mask = released & -released; 
-    if (eventCounter[historyIndex] < MAX_EVENTS_PER_FRAME) {
-      eventFrame[eventCounter[historyIndex]++] = InputEvent(mask, false);
-    }
+    eventFrame[eventCounter[0]++] = InputEvent(mask, false);
     released ^= mask;
   }
-
-  historyIndex = (historyIndex + 1) % MAX_HISTORY;
 }
 
 uint16_t VirtualController::getCurrentState(){
@@ -50,4 +47,18 @@ void VirtualController::printHistory(){
                 << (ie.pressed ? " Pressed" : " Released") << "\n";
     }
   }
+}
+
+void VirtualController::shiftHistory() {
+    static_assert(std::is_trivially_copyable_v<InputEvent>, "InputEvent must be trivially copyable");
+
+    // Shift event counters
+    std::memmove(eventCounter + 1, eventCounter, (MAX_HISTORY - 1) * sizeof(int));
+    
+    // Shift input history
+    std::memmove(inputHistory + 1, inputHistory, (MAX_HISTORY - 1) * sizeof(inputHistory[0]));
+    
+    // Clear new frame
+    eventCounter[0] = 0;
+    std::memset(inputHistory[0], 0, sizeof(inputHistory[0]));
 }
