@@ -1,4 +1,6 @@
 #include "VirtualController.h"
+#include <iostream>
+#include <bitset>
 
 VirtualController::VirtualController(){};
 VirtualController::~VirtualController(){};
@@ -35,4 +37,17 @@ void VirtualController::update(uint16_t input){
 
 uint16_t VirtualController::getCurrentState(){
   return currentState;
+}
+
+void VirtualController::printHistory(){
+  for (int frame = 0; frame < MAX_HISTORY; ++frame) {
+    std::cout << "Frame " << frame << " (" << eventCounter[frame] << " events):\n";
+    for (int event = 0; event < eventCounter[frame]; ++event) {
+      const InputEvent& ie = inputHistory[frame][event];
+      // Print the inputBit in binary form using std::bitset
+      std::cout << "  Event " << event << ": " 
+                << std::bitset<16>(ie.inputBit)
+                << (ie.pressed ? " Pressed" : " Released") << "\n";
+    }
+  }
 }
