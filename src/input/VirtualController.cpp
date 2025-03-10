@@ -30,13 +30,20 @@ bool VirtualController::isPressed(uint16_t input, bool strict) {
   return strict ? strictMatch(currentState, input) : (currentState & input) != 0;
 }
 
-bool VirtualController::wasPressed(uint16_t input, bool strict, int index, bool pressed) {
+bool VirtualController::wasPressed(uint16_t input, bool strict, bool pressed, int index) {
   if (index >= MAX_HISTORY || index < 0) return false;
 
   const InputFrame& currentFrame = inputHistory[index];
   const uint16_t targetMask = pressed ? currentFrame.pressedBits : currentFrame.releasedBits;
 
   return strict ? strictMatch(targetMask, input) : (targetMask & input) != 0;
+}
+
+bool VirtualController::wasPressedBuffer(uint16_t input, bool strict, bool pressed, int buffLen){
+  for (int i = 0; i < buffLen; i++) {
+    if (wasPressed(input,strict,pressed,i)) return true;
+  }
+  return false;
 }
 
 void VirtualController::shiftHistory(){

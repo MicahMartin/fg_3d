@@ -42,7 +42,7 @@ int main (int argc, char *argv[]) {
 
       vc.update(constructInput());
       printf("%d\n", frameCount);
-      if (vc.wasPressed(Input::LIGHT_P, true, 0, false)) {
+      if (vc.wasPressed(Input::LIGHT_P, true, true, 0)) {
         printf("lightP was pressed\n");
         quit = true;
       }
