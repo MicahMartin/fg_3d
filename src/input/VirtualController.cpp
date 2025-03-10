@@ -1,8 +1,9 @@
 #include "VirtualController.h"
 #include <cstdint>
 #include <cstring>
+#include <ostream>
 #include <sys/types.h>
-
+#include <iostream>
 VirtualController::VirtualController(){
   for (int i=0; i < MAX_HISTORY; ++i) {
     inputHistory[i] = {
@@ -19,6 +20,13 @@ void VirtualController::update(uint16_t input){
 
   prevState = currentState;
   currentState = cleanSOCD(input);
+  if (prevState == currentState) {
+    noChangeCounter++;
+  } else {
+    noChangeCounter = 0;
+  }
+
+
   const uint16_t changedButtons = prevState ^ currentState;
 
   InputFrame& currentFrame = inputHistory[0];
@@ -44,6 +52,34 @@ bool VirtualController::wasPressedBuffer(uint16_t input, bool strict, bool press
     if (wasPressed(input,strict,pressed,i)) return true;
   }
   return false;
+}
+
+bool VirtualController::checkCommand(int commandIndex, bool faceRight){
+  return false;
+}
+
+void VirtualController::printHistory() {
+// Move cursor up 4 lines (adjust if needed)
+    std::cout << "\033[4A";  // ANSI escape sequence to move cursor up 4 lines
+
+    // Print input state
+    std::cout 
+        << "---------------------------------\n"
+        << "R  L  U  D  A  B  X  Y  L1 R1  Frames\n"
+        << "---------------------------------\n"
+        << ((currentState & Input::RIGHT)    ? "→  " : "-  ")  
+        << ((currentState & Input::LEFT)     ? "←  " : "-  ")
+        << ((currentState & Input::UP)       ? "↑  " : "-  ")
+        << ((currentState & Input::DOWN)     ? "↓  " : "-  ")
+        << ((currentState & Input::LIGHT_P)  ? "X  " : "-  ")  
+        << ((currentState & Input::LIGHT_K)  ? "X  " : "-  ")
+        << ((currentState & Input::MEDIUM_P) ? "X  " : "-  ")
+        << ((currentState & Input::MEDIUM_K) ? "X  " : "-  ")
+        << ((currentState & Input::HEAVY_P)  ? "X  " : "-  ")
+        << ((currentState & Input::HEAVY_K)  ? "X  " : "-  ")
+        << "  " << noChangeCounter << "\n"
+        << "---------------------------------\n" 
+        << std::flush;
 }
 
 void VirtualController::shiftHistory(){

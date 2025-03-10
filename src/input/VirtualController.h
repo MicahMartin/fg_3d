@@ -56,6 +56,9 @@ public:
   bool isPressed(uint16_t input, bool strict = true);
   bool wasPressed(uint16_t input, bool strict = true, bool pressed = true, int index = 0);
   bool wasPressedBuffer(uint16_t input, bool strict = true, bool pressed = true, int buffLen = 2);
+  bool checkCommand(int commandIndex, bool faceRight);
+
+  void printHistory();
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
   uint16_t cleanSOCD(uint16_t input);
@@ -64,4 +67,5 @@ private:
   InputFrame inputHistory[MAX_HISTORY];
   uint16_t currentState{ 0 };
   uint16_t prevState{ 0 };
+  int noChangeCounter{ 0 };
 };
