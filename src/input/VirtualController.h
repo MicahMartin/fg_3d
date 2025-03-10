@@ -2,8 +2,6 @@
 #include <cstdint>
 
 constexpr int MAX_HISTORY{ 60 };
-constexpr int MAX_EVENTS_PER_FRAME{ 16 };
-
 struct InputFrame {
   uint16_t pressedBits;
   uint16_t releasedBits;
@@ -38,8 +36,10 @@ namespace Input {
     DOWNRIGHT = (DOWN | RIGHT),
     UPLEFT = (UP | LEFT),
     UPRIGHT = (UP | RIGHT),
-    HORIZONTAL_OCD = (LEFT | RIGHT),
-    VERTICAL_OCD = (UP | DOWN),
+    HORIZONTAL_SOCD = (LEFT | RIGHT),
+    VERTICAL_SOCD = (UP | DOWN),
+    DIR_MASK = 0x000F,
+    BTN_MASK = 0xFFF0
   };
 }
 
@@ -53,22 +53,15 @@ public:
   ~VirtualController();
 
   void update(uint16_t input);
-
   bool isPressed(uint16_t input, bool strict = true);
   bool wasPressed(uint16_t input, bool strict = true, int index = 0, bool pressed = true);
   bool wasPressedBuffer(uint16_t input, bool strict = true, bool pressed = true);
-
-  void printHistory();
-  uint16_t getCurrentState();
 private:
-  void shiftHistory(); // We could use the old school ring buffer approach, 
-                       // but why? we flatten it every frame to serialize anyway
+  void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
   uint16_t cleanSOCD(uint16_t input);
-  // InputEvent inputHistory[MAX_HISTORY][MAX_EVENTS_PER_FRAME];
-  InputFrame inputHistory[MAX_HISTORY];
+  bool strictMatch(uint16_t bitsToCheck, uint16_t query);
 
-  int eventCounter[MAX_HISTORY] = {0};
-  int historyIndex{ 0 };
+  InputFrame inputHistory[MAX_HISTORY];
   uint16_t currentState{ 0 };
   uint16_t prevState{ 0 };
 };
