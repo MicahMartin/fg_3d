@@ -49,7 +49,6 @@ int main (int argc, char *argv[]) {
       }
 
       vc.update(constructSdlPadInput());
-      vc.printHistory();
       if (vc.wasPressed(Input::LIGHT_P, true, false, 0)) {
         printf("lightP was pressed\n");
         quit = true;
