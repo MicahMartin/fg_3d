@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <fstream>
 #include "CommandCompiler.h"
+#include "glaze/core/common.hpp"
 #include "glaze/json/read.hpp"
 #include <glaze/glaze.hpp>
 
@@ -59,14 +60,23 @@ void CommandCompiler::init(const char* path,
     throw std::runtime_error("Failed to open file: " + std::string(path));
   }
 
-  std::string json((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+  std::string jsonBuff((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+  auto json = glz::read_json<RootJson>(jsonBuff);
 
-  CommandJson cmd;
-  auto err = glz::read_json(cmd, json);  // Deserialize into struct
-
-  if (err) {
-    throw std::runtime_error("Failed to parse JSON: " + std::to_string(err));
+  if(!json.error()){
+    printf("man theres no way this library is this sick! %zu", json->commands.size());
   }
+
+  // glz::json_t json;
+  // f (json->contains("commands")) {
+  //   printf("bro wtf is actually going on i am so fucking lost glaze, commands exists though?\n");
+  // }
+  // printf("size of the json? I guess? %zu", json.get_array).size());
+
+  // if (json[0].contains("instant_block")) {
+  //   printf("just a quick sanity check! good to go. the size of the json buff %zu\n", json.size());
+  // }
+
 
   commandStrings.clear();
   commands.clear();
@@ -81,9 +91,9 @@ void CommandCompiler::init(const char* path,
 void CommandCompiler::compile(const char* inputString, bool clears) {
 }
 
-CommandNode CommandCompiler::compileNode(){ }
+CommandNode CommandCompiler::compileNode(){ return CommandNode();}
 
 
-CommandNode CommandCompiler::compileOneNode(){ }
+CommandNode CommandCompiler::compileOneNode(){ return CommandNode(); }
 
-CommandFunction CommandCompiler::binaryCommand(CommandFunction currentFunc, CommandTokenType type){ }
+CommandFunction CommandCompiler::binaryCommand(CommandFunction currentFunc, CommandTokenType type){ return CommandFunction();}
