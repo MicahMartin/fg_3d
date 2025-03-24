@@ -60,7 +60,6 @@ public:
 
   std::vector<CommandStringObj> commandStrings;
   std::vector<CommandObj> commands;
-
 private:
   void* apiContext; 
   bool (*wasPressedFnPtr)(uint16_t input, bool strict, int index, bool pressed);

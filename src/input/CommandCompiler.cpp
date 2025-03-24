@@ -2,6 +2,7 @@
 #include <fstream>
 #include "CommandCompiler.h"
 #include "glaze/core/common.hpp"
+#include "glaze/core/context.hpp"
 #include "glaze/json/read.hpp"
 #include <glaze/glaze.hpp>
 
@@ -53,37 +54,17 @@ void CommandCompiler::init(const char* path,
             bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
             void* apiContext) {
 
+  // Commands.json file
   std::ifstream configFile(path);
-
-  if(!configFile){
-    printf("what the faaak %s", path);
+  if(!configFile)
     throw std::runtime_error("Failed to open file: " + std::string(path));
-  }
 
   std::string jsonBuff((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
   auto json = glz::read_json<RootJson>(jsonBuff);
 
-  if(!json.error()){
-    printf("man theres no way this library is this sick! %zu", json->commands.size());
+  for(auto command : json->commands) {
+    printf("The command string: %s: ", command.command.c_str());
   }
-
-  // glz::json_t json;
-  // f (json->contains("commands")) {
-  //   printf("bro wtf is actually going on i am so fucking lost glaze, commands exists though?\n");
-  // }
-  // printf("size of the json? I guess? %zu", json.get_array).size());
-
-  // if (json[0].contains("instant_block")) {
-  //   printf("just a quick sanity check! good to go. the size of the json buff %zu\n", json.size());
-  // }
-
-
-  commandStrings.clear();
-  commands.clear();
-
-  // for (int i = 0; i < commandStrings.size(); ++i) {
-  //  compile(commandStrings[i].command.c_str(), commandStrings[i].clears);
-  // }
 
   printf("done compiling commands\n");
 }
