@@ -59,17 +59,24 @@ void CommandCompiler::init(const char* path,
 
   std::string jsonBuff((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
   auto json = glz::read_json<RootJson>(jsonBuff);
-  if (json.error())
-    printf("but why is error even in here!?!?!\n");
   
-  for(auto commandObj : json->commands) {
+  for(auto commandObj : json->commands)
     compile(commandObj.command.c_str(), commandObj.clears);
-  }
 
   printf("done compiling commands\n");
 }
 
 void CommandCompiler::compile(const char* inputString, bool clears) {
+  CommandObj commandObj;
+  commandObj.clears = clears;
+
+  std::vector<CommandToken> tokens = commandScanner.scan(inputString);
+  currentToken = &tokens[0];
+
+  while(currentToken->type != CTOKEN_END)
+    commandObj.command.push_back(compileNode());
+
+  commands.push_back(commandObj);
 }
 
 CommandNode CommandCompiler::compileNode(){ return CommandNode();}
