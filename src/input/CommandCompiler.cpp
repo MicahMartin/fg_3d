@@ -43,22 +43,25 @@
 //  "~D, DB, @B & !D, LP | ~LP",
 //  TODO: load from file
 //   "~D, 20DF, 20F, 8LP | 8~LP", // 214P
-CommandCompiler::CommandCompiler() {
-}
+CommandCompiler::CommandCompiler(){}
 
-CommandCompiler::~CommandCompiler(){ }
+CommandCompiler::~CommandCompiler(){}
 
-void CommandCompiler::init(const char* path, 
-            bool (*wasPressedFn)(uint16_t, bool, int, bool), 
-            bool (*isPressedFn)(uint16_t, bool)) {
+void CommandCompiler::init(const char* path, bool (*wasPressedFn)(uint16_t, bool, int, bool), bool (*isPressedFn)(uint16_t, bool)) {
   std::ifstream configFile(path);
 
-  glz::json_t json{};
-  auto ec = glz::read_file_json(json, "./char_def/commands.json", std::string{});
-  if(ec){
-    printf("we got an error! \n");
+  if(!configFile){
+    throw std::runtime_error("Failed to open file: " + std::string(path));
   }
 
+  std::string json((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
+
+  CommandJson cmd;
+  auto err = glz::read_json(cmd, json);  // Deserialize into struct
+
+  if (err) {
+    throw std::runtime_error("Failed to parse JSON: " + std::to_string(err));
+  }
   // nlohmann::json commandJson;
 
   // configFile >> commandJson;
@@ -66,17 +69,17 @@ void CommandCompiler::init(const char* path,
   commandStrings.clear();
   commands.clear();
 
-//   for (auto& commandStringObj : commandJson["commands"].items()) {
-//     std::string commandString = commandStringObj.value()["command"].get<std::string>();
-//     bool clears = commandStringObj.value()["clears"].get<bool>();
-// 
-//     CommandStringObj command{ commandString, clears };
-// 
-//     commandStrings.push_back(command);
-//   }
+  //   for (auto& commandStringObj : commandJson["commands"].items()) {
+  //     std::string commandString = commandStringObj.value()["command"].get<std::string>();
+  //     bool clears = commandStringObj.value()["clears"].get<bool>();
+  // 
+  //     CommandStringObj command{ commandString, clears };
+  // 
+  //     commandStrings.push_back(command);
+  //   }
 
   for (int i = 0; i < commandStrings.size(); ++i) {
-    compile(commandStrings[i].command.c_str(), commandStrings[i].clears);
+  compile(commandStrings[i].command.c_str(), commandStrings[i].clears);
   }
 
   printf("done compiling commands\n");

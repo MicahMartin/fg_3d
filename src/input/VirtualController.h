@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include "CommandCompiler.h"
 
 constexpr int MAX_HISTORY{ 60 };
 struct InputFrame {
@@ -68,4 +69,9 @@ private:
   uint16_t currentState{ 0 };
   uint16_t prevState{ 0 };
   int noChangeCounter{ 0 };
+
+  CommandCompiler commandCompiler;
+  static bool isPressedStatic(void* ctx, uint16_t input, bool strict = true);
+  static bool wasPressedStatic(void* ctx, uint16_t input, bool strict = true, bool pressed = true, int index = 0);
+
 };
