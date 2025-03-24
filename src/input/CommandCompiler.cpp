@@ -50,20 +50,20 @@ CommandCompiler::CommandCompiler(){}
 CommandCompiler::~CommandCompiler(){}
 
 void CommandCompiler::init(const char* path, 
-            bool (*isPressedFn)(void* ctx, uint16_t, bool),
-            bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
-            void* apiContext) {
-
-  // Commands.json file
+                           bool (*isPressedFn)(void* ctx, uint16_t, bool), 
+                           bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
+                           void* apiContext) {
   std::ifstream configFile(path);
   if(!configFile)
     throw std::runtime_error("Failed to open file: " + std::string(path));
 
   std::string jsonBuff((std::istreambuf_iterator<char>(configFile)), std::istreambuf_iterator<char>());
   auto json = glz::read_json<RootJson>(jsonBuff);
-
-  for(auto command : json->commands) {
-    printf("The command string: %s: ", command.command.c_str());
+  if (json.error())
+    printf("but why is error even in here!?!?!\n");
+  
+  for(auto commandObj : json->commands) {
+    compile(commandObj.command.c_str(), commandObj.clears);
   }
 
   printf("done compiling commands\n");
