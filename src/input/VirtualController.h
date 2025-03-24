@@ -60,6 +60,7 @@ public:
   bool checkCommand(int commandIndex, bool faceRight);
 
   void printHistory();
+
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
   uint16_t cleanSOCD(uint16_t input);
@@ -71,7 +72,12 @@ private:
   int noChangeCounter{ 0 };
 
   CommandCompiler commandCompiler;
-  static bool isPressedStatic(void* ctx, uint16_t input, bool strict = true);
-  static bool wasPressedStatic(void* ctx, uint16_t input, bool strict = true, bool pressed = true, int index = 0);
+  static bool wasPressedStatic(void* ctx, uint16_t input, bool strict = true, bool pressed = true, int index = 0) {
+      return static_cast<VirtualController*>(ctx)->wasPressed(input, strict, pressed, index);
+  }
+
+  static bool isPressedStatic(void* ctx, uint16_t input, bool strict = true) {
+      return static_cast<VirtualController*>(ctx)->isPressed(input, strict);
+  }
 
 };

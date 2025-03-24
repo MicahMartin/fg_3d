@@ -47,10 +47,15 @@ CommandCompiler::CommandCompiler(){}
 
 CommandCompiler::~CommandCompiler(){}
 
-void CommandCompiler::init(const char* path, bool (*wasPressedFn)(uint16_t, bool, int, bool), bool (*isPressedFn)(uint16_t, bool)) {
+void CommandCompiler::init(const char* path, 
+            bool (*isPressedFn)(void* ctx, uint16_t, bool),
+            bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
+            void* apiContext) {
+
   std::ifstream configFile(path);
 
   if(!configFile){
+    printf("what the faaak %s", path);
     throw std::runtime_error("Failed to open file: " + std::string(path));
   }
 
@@ -62,25 +67,13 @@ void CommandCompiler::init(const char* path, bool (*wasPressedFn)(uint16_t, bool
   if (err) {
     throw std::runtime_error("Failed to parse JSON: " + std::to_string(err));
   }
-  // nlohmann::json commandJson;
-
-  // configFile >> commandJson;
 
   commandStrings.clear();
   commands.clear();
 
-  //   for (auto& commandStringObj : commandJson["commands"].items()) {
-  //     std::string commandString = commandStringObj.value()["command"].get<std::string>();
-  //     bool clears = commandStringObj.value()["clears"].get<bool>();
-  // 
-  //     CommandStringObj command{ commandString, clears };
-  // 
-  //     commandStrings.push_back(command);
-  //   }
-
-  for (int i = 0; i < commandStrings.size(); ++i) {
-  compile(commandStrings[i].command.c_str(), commandStrings[i].clears);
-  }
+  // for (int i = 0; i < commandStrings.size(); ++i) {
+  //  compile(commandStrings[i].command.c_str(), commandStrings[i].clears);
+  // }
 
   printf("done compiling commands\n");
 }
@@ -88,12 +81,9 @@ void CommandCompiler::init(const char* path, bool (*wasPressedFn)(uint16_t, bool
 void CommandCompiler::compile(const char* inputString, bool clears) {
 }
 
-CommandNode CommandCompiler::compileNode(){
-}
+CommandNode CommandCompiler::compileNode(){ }
 
 
-CommandNode CommandCompiler::compileOneNode(){
-}
+CommandNode CommandCompiler::compileOneNode(){ }
 
-CommandFunction CommandCompiler::binaryCommand(CommandFunction currentFunc, CommandTokenType type){
-}
+CommandFunction CommandCompiler::binaryCommand(CommandFunction currentFunc, CommandTokenType type){ }

@@ -13,9 +13,10 @@ VirtualController::VirtualController(){
       .validBits = 0xFFFF,
     };
   };
+
   commandCompiler.init("./char_def/commands.json", 
-                       &VirtualController::wasPressedStatic,
                        &VirtualController::isPressedStatic,
+                       &VirtualController::wasPressedStatic,
                        this);
 };
 
@@ -109,10 +110,3 @@ bool VirtualController::strictMatch(uint16_t bitsToCheck, uint16_t query) {
   return dirMatch && btnMatch;
 }
 
-static bool wasPressedStatic(uint16_t key, bool repeat, int delay, bool held, void* ctx) {
-    return static_cast<VirtualController*>(ctx)->wasPressed(key, repeat, delay, held);
-}
-
-static bool isPressedStatic(uint16_t key, bool repeat, void* ctx) {
-    return static_cast<VirtualController*>(ctx)->isPressed(key, repeat);
-}

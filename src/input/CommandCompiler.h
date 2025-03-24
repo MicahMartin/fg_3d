@@ -35,8 +35,8 @@ public:
   ~CommandCompiler();
 
   void init(const char* path, 
-            bool (*wasPressedFn)(void* ctx, uint16_t, bool, int, bool), 
             bool (*isPressedFn)(void* ctx, uint16_t, bool),
+            bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
             void* apiContext);
 
   void compile(const char* inputString, bool clears);
@@ -47,6 +47,7 @@ public:
 
   std::vector<CommandStringObj> commandStrings;
   std::vector<CommandObj> commands;
+
 private:
   void* apiContext; 
   bool (*wasPressedFnPtr)(uint16_t input, bool strict, int index, bool pressed);
