@@ -45,7 +45,7 @@
 //  TODO: load from file
 //   "~D, 20DF, 20F, 8LP | 8~LP", // 214P
 
-typedef std::function<bool(int, bool)> CommandFunction;
+typedef std::function<bool(uint16_t, bool, int, bool)> CommandFunction;
 
 struct CommandNode {
   CommandFunction function;
@@ -81,20 +81,19 @@ public:
   void init(const char* path, 
             bool (*isPressedFn)(void* ctx, uint16_t, bool),
             bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
-            void* apiContext);
-
+            void* ctx);
+private:
   void compile(const char* inputString, bool clears);
-
   CommandNode compileNode();
   CommandNode compileOneNode();
   CommandFunction binaryCommand(CommandFunction currentFunc, CommandTokenType type);
 
   std::vector<CommandStringObj> commandStrings;
   std::vector<CommandObj> commands;
-private:
+
   void* apiContext; 
-  bool (*wasPressedFnPtr)(uint16_t input, bool strict, int index, bool pressed);
-  bool (*isPressedFnPtr)(uint16_t input, bool strict);
+  bool (*wasPressedFnPtr)(void* ctx, uint16_t input, bool strict, bool pressed, int index);
+  bool (*isPressedFnPtr)(void* ctx, uint16_t input, bool strict);
 
   CommandScanner commandScanner;
   CommandToken* currentToken;

@@ -1,4 +1,5 @@
 #include "VirtualController.h"
+#include "Input.h"
 #include <cstdint>
 #include <cstring>
 #include <ostream>
@@ -15,8 +16,8 @@ VirtualController::VirtualController(){
   };
 
   commandCompiler.init("./char_def/commands.json", 
-                       &VirtualController::isPressedStatic,
-                       &VirtualController::wasPressedStatic,
+                       &VirtualController::isPressedStatic, 
+                       &VirtualController::wasPressedStatic, 
                        this);
 };
 
