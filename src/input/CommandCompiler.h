@@ -62,7 +62,6 @@ struct CommandStringObj {
   bool clears;
 };
 
-
 struct CommandJson {
   std::string command;
   std::string name;
@@ -73,14 +72,6 @@ struct CommandJson {
 struct RootJson {
   std::vector<CommandJson> commands;
 };
-
-// TODO: Actually do this for perf gains
-// struct CommandJson {
-//   int num;
-//   bool clears;
-//   std::string name;
-//   std::string command;
-// };
 
 class CommandCompiler {
 public:

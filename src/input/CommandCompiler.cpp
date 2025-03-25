@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <fstream>
 #include "CommandCompiler.h"
+#include "CommandScanner.h"
 #include "glaze/json/read.hpp"
 #include <glaze/glaze.hpp>
 
@@ -20,6 +21,7 @@ void CommandCompiler::init(const char* path,
   auto json = glz::read_json<RootJson>(jsonBuff);
   
   for(auto commandObj : json->commands){
+    printf("new command!\n");
     compile(commandObj.command.c_str(), commandObj.clears);
   }
 
@@ -31,13 +33,16 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
   commandObj.clears = clears;
 
   std::vector<CommandToken> tokens = commandScanner.scan(inputString);
-  currentToken = &tokens[0];
-
-  while(currentToken->type != CTOKEN_END){
-    commandObj.command.push_back(compileNode());
+  for(CommandToken tokenToPrint : tokens) {
+    printf("t:%s\n", commandScanner.tokenToString[tokenToPrint.type]);
   }
 
-  commands.push_back(commandObj);
+  currentToken = &tokens[0];
+  // while(currentToken->type != CTOKEN_END){
+  //   commandObj.command.push_back(compileNode());
+  // }
+
+  // commands.push_back(commandObj);
 }
 
 CommandNode CommandCompiler::compileNode(){
@@ -53,12 +58,12 @@ CommandNode CommandCompiler::compileNode(){
   while(currentToken->type != CTOKEN_DELIM && currentToken->type != CTOKEN_END) {
     switch (currentToken->type) {
       case CTOKEN_RELEASED: {
-        funcPointer = std::bind(&VirtualController::wasReleasedWrapper, controllerPointer, _1, _2, _3, _4);
+        // funcPointer = std::bind(&VirtualController::wasReleasedWrapper, controllerPointer, _1, _2, _3, _4);
         currentToken++;
       }
       break;
       case CTOKEN_HELD: {
-        funcPointer = std::bind(&VirtualController::isPressedWrapper, controllerPointer, _1, _2, _3, _4);
+        // funcPointer = std::bind(&VirtualController::isPressedWrapper, controllerPointer, _1, _2, _3, _4);
         currentToken++;
       }
       break;
@@ -68,76 +73,76 @@ CommandNode CommandCompiler::compileNode(){
       }
       break;
       case CTOKEN_NEUTRAL: {
-       finalFunc = std::bind(funcPointer, NOINPUT, strictness, _1, _2);
+       // finalFunc = std::bind(funcPointer, NOINPUT, strictness, _1, _2);
        currentToken++;
       }
       break;
       case CTOKEN_FORWARD: {
-       finalFunc = std::bind(funcPointer, RIGHT, strictness, _1, _2);
+       // finalFunc = std::bind(funcPointer, RIGHT, strictness, _1, _2);
        currentToken++;
       }
       break;
       case CTOKEN_BACK: {
-        finalFunc = std::bind(funcPointer, LEFT, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, LEFT, strictness, _1, _2);
         currentToken++;
       }
       break;
       case CTOKEN_UP: {
-        finalFunc = std::bind(funcPointer, UP, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, UP, strictness, _1, _2);
         printf("building up\n");
         currentToken++;
       }
       break;
       case CTOKEN_DOWN: {
-        finalFunc = std::bind(funcPointer, DOWN, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, DOWN, strictness, _1, _2);
         printf("building down\n");
         currentToken++;
       }
       break;
       case CTOKEN_UPFORWARD: {
-        finalFunc = std::bind(funcPointer, UPRIGHT, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, UPRIGHT, strictness, _1, _2);
         printf("building upforward\n");
         currentToken++;
       }
       break;
       case CTOKEN_UPBACK: {
-        finalFunc = std::bind(funcPointer, UPLEFT, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, UPLEFT, strictness, _1, _2);
         printf("building upback\n");
         currentToken++;
       }
       break;
       case CTOKEN_DOWNFORWARD: {
-        finalFunc = std::bind(funcPointer, DOWNRIGHT, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, DOWNRIGHT, strictness, _1, _2);
         printf("building upforward\n");
         currentToken++;
       }
       break;
       case CTOKEN_DOWNBACK: {
-        finalFunc = std::bind(funcPointer, DOWNLEFT, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, DOWNLEFT, strictness, _1, _2);
         printf("building downback\n");
         currentToken++;
       }
       break;
       case CTOKEN_LP: {
-        finalFunc = std::bind(funcPointer, LP, strictness, _1, _2);
+        //finalFunc = std::bind(funcPointer, LP, strictness, _1, _2);
         printf("building lightpunch\n");
         currentToken++;
       }
       break;
       case CTOKEN_LK: {
-        finalFunc = std::bind(funcPointer, LK, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, LK, strictness, _1, _2);
         printf("building lightk\n");
         currentToken++;
       }
       break;
       case CTOKEN_MP: {
-        finalFunc = std::bind(funcPointer, MP, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, MP, strictness, _1, _2);
         printf("building mediumP\n");
         currentToken++;
       }
       break;
       case CTOKEN_MK: {
-        finalFunc = std::bind(funcPointer, MK, strictness, _1, _2);
+        // finalFunc = std::bind(funcPointer, MK, strictness, _1, _2);
         printf("building mediumKick\n");
         currentToken++;
       }
@@ -160,6 +165,7 @@ CommandNode CommandCompiler::compileNode(){
         break;
     }
   }
+
   if(currentToken->type != CTOKEN_END){
     currentToken++;
   }
