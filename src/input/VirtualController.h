@@ -37,13 +37,4 @@ private:
   uint16_t currentState{ 0 };
   uint16_t prevState{ 0 };
   int noChangeCounter{ 0 };
-
-  static inline bool wasPressedStatic(void* ctx, uint16_t input, bool strict = true, bool pressed = true, int index = 0) {
-    return static_cast<VirtualController*>(ctx)->wasPressed(input, strict, pressed, index);
-  }
-
-  static inline bool isPressedStatic(void* ctx, uint16_t input, bool strict = true) {
-    return static_cast<VirtualController*>(ctx)->isPressed(input, strict);
-  }
-
 };

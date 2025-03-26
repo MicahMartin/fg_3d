@@ -15,10 +15,7 @@ VirtualController::VirtualController(){
     };
   };
 
-  commandCompiler.init("./char_def/commands.json", 
-                       &VirtualController::isPressedStatic, 
-                       &VirtualController::wasPressedStatic, 
-                       this);
+  commandCompiler.init("./char_def/commands.json");
 };
 
 VirtualController::~VirtualController(){};

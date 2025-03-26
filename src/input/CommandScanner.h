@@ -1,10 +1,11 @@
 #pragma once
-
 #include "stdint.h"
+#include <cstdlib>
 #include <map>
 #include <vector>
+#include "Input.h"
 
-typedef enum {
+enum CommandTokenType {
   CTOKEN_NEUTRAL,
   CTOKEN_FORWARD,
   CTOKEN_BACK,
@@ -30,14 +31,33 @@ typedef enum {
   CTOKEN_NOT,
   CTOKEN_DELIM,
   CTOKEN_END,
-
-} CommandTokenType;
+};
 
 struct CommandToken {
   CommandTokenType type;
   const char *start;
   uint8_t length;
 };
+
+static uint16_t parseInputMask(const CommandToken* token) {
+  switch (token->type) {
+    case CTOKEN_NEUTRAL: return Input::NOINPUT;
+    case CTOKEN_FORWARD: return Input::RIGHT;
+    case CTOKEN_BACK:    return Input::LEFT;
+    case CTOKEN_UP:      return Input::UP;
+    case CTOKEN_DOWN:    return Input::DOWN;
+    case CTOKEN_LP:      return Input::LIGHT_P;
+    case CTOKEN_LK:      return Input::LIGHT_K;
+    case CTOKEN_MP:      return Input::MEDIUM_P;
+    case CTOKEN_MK:      return Input::MEDIUM_K;
+    default:             return 0;
+  }
+}
+
+// Parses a number token into a uint16_t delay (number of frames).
+static uint16_t parseNumber(const CommandToken* token) {
+  return static_cast<uint16_t>(std::strtol(token->start, nullptr, 10));
+}
 
 class CommandScanner {
 public:

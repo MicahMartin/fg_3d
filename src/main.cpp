@@ -14,7 +14,7 @@
 #include "input/Input.h"
 #include <cstdio>
 
-constexpr int cScreenWidth{640};
+constexpr int cScreenWidth{ 640 };
 constexpr int cScreenHeight{ 480 };
 
 bool init();
