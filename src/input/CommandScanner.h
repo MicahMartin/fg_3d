@@ -39,11 +39,15 @@ struct CommandToken {
   uint8_t length;
 };
 
-static uint16_t parseInputMask(const CommandToken* token) {
+static uint32_t parseInputMask(const CommandToken* token) {
   switch (token->type) {
     case CTOKEN_NEUTRAL: return Input::NOINPUT;
     case CTOKEN_FORWARD: return Input::RIGHT;
+    case CTOKEN_DOWNFORWARD: return Input::DOWNRIGHT;
+    case CTOKEN_UPFORWARD: return Input::UPRIGHT;
     case CTOKEN_BACK:    return Input::LEFT;
+    case CTOKEN_DOWNBACK: return Input::DOWNLEFT;
+    case CTOKEN_UPBACK: return Input::UPLEFT;
     case CTOKEN_UP:      return Input::UP;
     case CTOKEN_DOWN:    return Input::DOWN;
     case CTOKEN_LP:      return Input::LIGHT_P;
@@ -54,9 +58,9 @@ static uint16_t parseInputMask(const CommandToken* token) {
   }
 }
 
-// Parses a number token into a uint16_t delay (number of frames).
-static uint16_t parseNumber(const CommandToken* token) {
-  return static_cast<uint16_t>(std::strtol(token->start, nullptr, 10));
+// Parses a number token into a uint32_t delay (number of frames).
+static uint32_t parseNumber(const CommandToken* token) {
+  return static_cast<uint32_t>(std::strtol(token->start, nullptr, 10));
 }
 
 class CommandScanner {

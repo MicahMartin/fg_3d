@@ -49,9 +49,8 @@ int main (int argc, char *argv[]) {
         if (e.type == SDL_EVENT_JOYSTICK_ADDED) openGamePad(e.jdevice.which);
       }
 
-      vc.update(constructSdlPadInput());
-      if (vc.wasPressed(Input::LIGHT_P, true, false, 0)) {
-        printf("lightP was pressed\n");
+      vc.update(constructSdlKeyboardInput());
+      if (vc.checkCommand(2, true)) {
         quit = true;
       }
 
@@ -113,6 +112,18 @@ int constructSdlKeyboardInput(){
   const bool* keyStates = SDL_GetKeyboardState(nullptr);
   if (keyStates[SDL_SCANCODE_A]) {
     retVal |= Input::LIGHT_P;
+  }
+  if (keyStates[SDL_SCANCODE_DOWN]) {
+    retVal |= Input::DOWN;
+  }
+  if (keyStates[SDL_SCANCODE_UP]) {
+    retVal |= Input::UP;
+  }
+  if (keyStates[SDL_SCANCODE_LEFT]) {
+    retVal |= Input::LEFT;
+  }
+  if (keyStates[SDL_SCANCODE_RIGHT]) {
+    retVal |= Input::RIGHT;
   }
   return retVal;
 }

@@ -5,9 +5,9 @@
 constexpr int MAX_HISTORY{ 60 };
 
 struct InputFrame {
-  uint16_t pressedBits;
-  uint16_t releasedBits;
-  uint16_t validBits;
+  uint32_t pressedBits;
+  uint32_t releasedBits;
+  uint32_t validBits;
 };
 
 class VirtualController {
@@ -19,22 +19,21 @@ public:
   VirtualController &operator=(const VirtualController &) = default;
   ~VirtualController();
 
-  void update(uint16_t input);
-  bool isPressed(uint16_t input, bool strict = true);
-  bool wasPressed(uint16_t input, bool strict = true, bool pressed = true, int index = 0);
-  bool wasPressedBuffer(uint16_t input, bool strict = true, bool pressed = true, int buffLen = 2);
-  bool checkCommand(int commandIndex, bool faceRight);
-
-  void printHistory();
+  void update(uint32_t input);
+  bool isPressed(uint32_t input, bool strict = true);
+  bool wasPressed(uint32_t input, bool strict = true, bool pressed = true, int offset = 0);
+  bool wasPressedBuffer(uint32_t input, bool strict = true, bool pressed = true, int buffLen = 2);
+  bool checkCommand(int index, bool faceRight);
 
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
-  uint16_t cleanSOCD(uint16_t input);
-  bool strictMatch(uint16_t bitsToCheck, uint16_t query);
+  uint32_t cleanSOCD(uint32_t input);
+  bool strictMatch(uint32_t bitsToCheck, uint32_t query);
+  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset);
 
   CommandCompiler commandCompiler;
   InputFrame inputHistory[MAX_HISTORY];
-  uint16_t currentState{ 0 };
-  uint16_t prevState{ 0 };
+  uint32_t currentState{ 0 };
+  uint32_t prevState{ 0 };
   int noChangeCounter{ 0 };
 };

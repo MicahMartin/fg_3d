@@ -14,7 +14,7 @@ enum CommandOp : uint8_t {
 
 struct CommandIns {
   CommandOp opcode;
-  uint16_t operand; // Represents an input bitmask or delay
+  uint32_t operand; // Represents an input bitmask or delay
 };
 
 // The compiled command, as a contiguous sequence of instructions.
@@ -24,8 +24,8 @@ struct CommandCode {
 };
 
 // Modifier flag constants (pick bits that do not conflict with your input masks)
-constexpr uint16_t NONSTRICT_FLAG = 0x8000; // set by '@'
-constexpr uint16_t NOT_FLAG       = 0x4000; // set by '!'
+constexpr uint32_t NONSTRICT_FLAG = 0x8000; // set by '@'
+constexpr uint32_t NOT_FLAG       = 0x4000; // set by '!'
 
 // each 'commandString' is a descriptor for a sequence of bytecode instructions.
 // P | ~P = ((wasPressed(LP)) || (wasReleased(LP)))

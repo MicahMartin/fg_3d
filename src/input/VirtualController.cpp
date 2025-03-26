@@ -1,10 +1,10 @@
 #include "VirtualController.h"
+#include "CommandVm.h"
 #include "Input.h"
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
-#include <ostream>
 #include <sys/types.h>
-#include <iostream>
 
 VirtualController::VirtualController(){
   for (int i=0; i < MAX_HISTORY; ++i) {
@@ -20,57 +20,105 @@ VirtualController::VirtualController(){
 
 VirtualController::~VirtualController(){};
 
-void VirtualController::update(uint16_t input){
+void VirtualController::update(uint32_t input){
   shiftHistory();
 
   prevState = currentState;
   currentState = cleanSOCD(input);
 
-  const uint16_t changedButtons = prevState ^ currentState;
+  const uint32_t changedButtons = prevState ^ currentState;
 
   InputFrame& currentFrame = inputHistory[0];
   currentFrame.pressedBits = changedButtons & currentState;
   currentFrame.releasedBits = changedButtons & prevState;
 }
 
-bool VirtualController::isPressed(uint16_t input, bool strict) {
+bool VirtualController::isPressed(uint32_t input, bool strict) {
   return strict ? strictMatch(currentState, input) : (currentState & input) != 0;
 }
 
-bool VirtualController::wasPressed(uint16_t input, bool strict, bool pressed, int index) {
-  if (index >= MAX_HISTORY || index < 0) return false;
+bool VirtualController::wasPressed(uint32_t input, bool strict, bool pressed, int offset) {
+  if (offset >= MAX_HISTORY || offset < 0) return false;
 
-  const InputFrame& currentFrame = inputHistory[index];
-  const uint16_t targetMask = pressed ? currentFrame.pressedBits : currentFrame.releasedBits;
+  const InputFrame& currentFrame = inputHistory[offset];
+  const uint32_t targetMask = pressed ? currentFrame.pressedBits : currentFrame.releasedBits;
 
   return strict ? strictMatch(targetMask, input) : (targetMask & input) != 0;
 }
 
-bool VirtualController::wasPressedBuffer(uint16_t input, bool strict, bool pressed, int buffLen){
+bool VirtualController::wasPressedBuffer(uint32_t input, bool strict, bool pressed, int buffLen){
   for (int i = 0; i < buffLen; i++) {
     if (wasPressed(input,strict,pressed,i)) return true;
   }
   return false;
 }
 
-bool VirtualController::checkCommand(int commandIndex, bool faceRight){
-  return false;
-}
+bool VirtualController::checkCommand(int index, bool faceRight) {
+  const CommandCode* code = commandCompiler.getCommand(index);
+  int frameOffset = 0;       // Start checking from the most recent frame.
+  bool overallResult = true; // This will accumulate the results of all instructions.
 
-void VirtualController::printHistory() {
-  std::cout 
-    << "\r"
-    << ((currentState & Input::RIGHT)    ? "→  " : "-  ")  
-    << ((currentState & Input::LEFT)     ? "←  " : "-  ")
-    << ((currentState & Input::UP)       ? "↑  " : "-  ")
-    << ((currentState & Input::DOWN)     ? "↓  " : "-  ")
-    << ((currentState & Input::LIGHT_P)  ? "X  " : "-  ")  
-    << ((currentState & Input::LIGHT_K)  ? "X  " : "-  ")
-    << ((currentState & Input::MEDIUM_P) ? "X  " : "-  ")
-    << ((currentState & Input::MEDIUM_K) ? "X  " : "-  ")
-    << ((currentState & Input::HEAVY_P)  ? "X  " : "-  ")
-    << ((currentState & Input::HEAVY_K)  ? "X  " : "-  ")
-    << std::flush;
+  // Iterate over each instruction in the command's bytecode.
+  for (const auto& ins : code->instructions) {
+    bool strict = ins.opcode & NONSTRICT_FLAG;
+    bool negated = ins.opcode & NOT_FLAG;
+    bool result = false;  // Result for this instruction.
+
+    switch (ins.opcode) {
+      case OP_PRESS: {
+        // Check for a press: find a frame from frameOffset where the condition is met.
+        int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset);
+        result = (matchedFrame >= 0);
+        if (result) {
+          printf("Found soumn press %d\n", ins.operand);
+            // Advance the offset to the matching frame.
+            frameOffset = matchedFrame;
+        }
+        break;
+      }
+      case OP_RELEASE: {
+        int matchedFrame = findMatchingFrame(ins.operand, strict, false, frameOffset);
+        result = (matchedFrame >= 0);
+        if (result) {
+            frameOffset = matchedFrame;
+        }
+        break;
+      }
+      case OP_HOLD: {
+        result = isPressed(ins.operand, strict);
+        break;
+      }
+      case OP_DELAY: {
+      }
+      case OP_AND: {
+          // For a simple sequential design, an AND operator is implicit;
+          // here we just mark it as passing.
+          result = true;
+          break;
+      }
+      case OP_OR: {
+          // For OR, a proper implementation would combine alternate paths.
+          // As a placeholder, we'll assume the branch passes if overallResult is true.
+          result = true;
+          break;
+      }
+      case OP_END: {
+          // End-of-command marker: we finalize the overall result.
+          overallResult = overallResult && result;
+          return overallResult;
+      }
+      default: {
+          // Unrecognized opcode results in failure.
+          result = false;
+          break;
+      }
+    }
+    // Combine the result of this instruction into the overall result.
+    overallResult = overallResult && result;
+    // If at any point the overall result is false, we can stop early.
+    if (!overallResult) return false;
+  }
+  return overallResult;
 }
 
 void VirtualController::shiftHistory(){
@@ -83,22 +131,22 @@ void VirtualController::shiftHistory(){
   };
 }
 
-uint16_t VirtualController::cleanSOCD(uint16_t input){
-  const uint16_t horizontal = input & Input::HORIZONTAL_SOCD;
+uint32_t VirtualController::cleanSOCD(uint32_t input){
+  const uint32_t horizontal = input & Input::HORIZONTAL_SOCD;
   if (horizontal == Input::HORIZONTAL_SOCD)
     input &= ~Input::HORIZONTAL_SOCD;
 
-  const uint16_t vertical = input & Input::VERTICAL_SOCD;
+  const uint32_t vertical = input & Input::VERTICAL_SOCD;
   if (vertical == Input::VERTICAL_SOCD)
     input &= ~Input::VERTICAL_SOCD;
 
   return input;
 }
 
-bool VirtualController::strictMatch(uint16_t bitsToCheck, uint16_t query) {
+bool VirtualController::strictMatch(uint32_t bitsToCheck, uint32_t query) {
   // Extract the directional and button parts from the query.
-  const uint16_t queryDir = query & Input::DIR_MASK;
-  const uint16_t queryBtn = query & Input::BTN_MASK;
+  const uint32_t queryDir = query & Input::DIR_MASK;
+  const uint32_t queryBtn = query & Input::BTN_MASK;
 
   // Check directional bits if any were provided.
   bool dirMatch = (queryDir == 0) || ((bitsToCheck & Input::DIR_MASK) == queryDir);
@@ -108,3 +156,11 @@ bool VirtualController::strictMatch(uint16_t bitsToCheck, uint16_t query) {
   return dirMatch && btnMatch;
 }
 
+int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset){
+  for (int i = startOffset; i < 8; ++i) {
+    if (wasPressed(operand, strict, pressed, i)) 
+      return i;
+  }
+  return -1;
+
+}

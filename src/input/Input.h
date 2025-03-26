@@ -2,8 +2,8 @@
 #include <cstdint>
 
 namespace Input {
-  enum InputMasks : uint16_t {
-    NOINPUT = 0,
+  enum InputMasks : uint32_t {
+    NOINPUT = 0x10000,
 
     RIGHT = 0x1,
     LEFT = 0x2,

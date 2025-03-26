@@ -1,24 +1,17 @@
 #include "CommandCompiler.h"
-#include "CommandVm.h"
-
+#include "CommandScanner.h"
 #include <cstdio>
 #include <cstdint>
 #include <fstream>
 #include <glaze/glaze.hpp>
 #include <glaze/json/read.hpp>
+#include <iostream>
 
 CommandCompiler::CommandCompiler(){}
 
 CommandCompiler::~CommandCompiler(){}
 
-void CommandCompiler::init(const char* path, 
-                           bool (*isPressedFn)(void* ctx, uint16_t, bool), 
-                           bool (*wasPressedFn)(void* ctx, uint16_t, bool, bool, int), 
-                           void* ctx) {
-
-  isPressedFnPtr = isPressedFn;
-  wasPressedFnPtr = wasPressedFn;
-  apiContext = ctx;
+void CommandCompiler::init(const char* path) {
   std::ifstream configFile(path);
   if(!configFile)
     throw std::runtime_error("Failed to open file: " + std::string(path));
@@ -32,6 +25,48 @@ void CommandCompiler::init(const char* path,
   }
 
   printf("done compiling commands\n");
+}
+
+const CommandCode* CommandCompiler::getCommand(int index) const {
+  if (index < 0 || index >= commands.size())
+    throw std::runtime_error("trying to access out of bounds command");
+
+  return &commands[index];
+}
+
+std::string CommandCompiler::opcodeToString(CommandOp opcode) {
+  switch (opcode) {
+    case OP_PRESS:    return "OP_PRESS";
+    case OP_RELEASE:  return "OP_RELEASE";
+    case OP_HOLD:     return "OP_HOLD";
+    case OP_DELAY:    return "OP_DELAY";
+    case OP_AND:      return "OP_AND";
+    case OP_OR:       return "OP_OR";
+    case OP_END:      return "OP_END";
+    default:          return "UNKNOWN_OP";
+  }
+}
+
+void CommandCompiler::printCode(const CommandCode& command) {
+  std::cout << "=== Command Bytecode ===\n";
+  
+  for (const auto& instruction : command.instructions) {
+    std::cout << std::setw(12) << std::left << opcodeToString(instruction.opcode)
+              << " Operand: 0x" << std::hex << std::setw(4) << std::setfill('0') << instruction.operand
+              << " (";
+
+    // Extract input mask and modifier flags
+    bool isNonStrict = instruction.operand & NONSTRICT_FLAG;
+    bool isNegated = instruction.operand & NOT_FLAG;
+
+    // Print extracted components
+    if (isNonStrict) std::cout << " @";
+    if (isNegated) std::cout << " !";
+    
+    std::cout << ")\n";
+  }
+
+  std::cout << "========================\n";
 }
 
 void CommandCompiler::compile(const char* inputString, bool clears) {
@@ -55,8 +90,12 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
       currentToken++;
     }
   }
+  // Mark the end of the command.
+  code.instructions.push_back({ OP_END, 0 });
+
   commands.push_back(code);
   printf("Compiled command: %s\n", inputString);
+  printCode(code);
 }
 
 // This function compiles a sequence of tokens into a CommandBytecode.
@@ -92,7 +131,11 @@ CommandCode CommandCompiler::compileNode() {
       // For actual input tokens.
       case CTOKEN_NEUTRAL:
       case CTOKEN_FORWARD:
+      case CTOKEN_DOWNFORWARD:
+      case CTOKEN_UPFORWARD:
       case CTOKEN_BACK:
+      case CTOKEN_DOWNBACK:
+      case CTOKEN_UPBACK:
       case CTOKEN_UP:
       case CTOKEN_DOWN:
       case CTOKEN_LP:
@@ -100,17 +143,17 @@ CommandCode CommandCompiler::compileNode() {
       case CTOKEN_MP:
       case CTOKEN_MK: {
         // Get the base input mask from the token.
-        uint16_t baseMask = parseInputMask(currentToken);
+        uint32_t baseMask = parseInputMask(currentToken);
         
         // Choose the opcode based on modifier flags.
         CommandOp opcode = OP_PRESS; // Default is a press check.
         if (heldFlag) {
-            opcode = OP_HOLD;
+          opcode = OP_HOLD;
         } else if (releaseFlag) {
-            opcode = OP_RELEASE;
+          opcode = OP_RELEASE;
         }
         // Construct the final operand: combine base mask with modifier flags.
-        uint16_t finalOperand = baseMask;
+        uint32_t finalOperand = baseMask;
         if (nonStrict) {
             finalOperand |= NONSTRICT_FLAG;
         }
@@ -132,7 +175,7 @@ CommandCode CommandCompiler::compileNode() {
       }
       case CTOKEN_NUMBER: {
         // A numeric token indicates a delay (timing constraint).
-        uint16_t delay = parseNumber(currentToken);
+        uint32_t delay = parseNumber(currentToken);
         bytecode.instructions.push_back({ OP_DELAY, delay });
         currentToken++;
         break;
@@ -156,7 +199,5 @@ CommandCode CommandCompiler::compileNode() {
     }
   }
   
-  // Mark the end of the command.
-  bytecode.instructions.push_back({ OP_END, 0 });
   return bytecode;
 }

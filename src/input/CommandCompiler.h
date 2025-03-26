@@ -26,13 +26,15 @@ public:
   ~CommandCompiler();
 
   void init(const char* path);
+  const CommandCode* getCommand(int index) const;
+
 private:
   void compile(const char* inputString, bool clears);
   CommandCode compileNode();
+  std::string opcodeToString(CommandOp opcode);
+  void printCode(const CommandCode& code);
 
-  std::vector<CommandStringObj> commandStrings;
   std::vector<CommandCode> commands;
-
   CommandScanner commandScanner;
   CommandToken* currentToken;
 };
