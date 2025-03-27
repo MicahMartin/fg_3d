@@ -2,7 +2,7 @@
 #include <cstdint>
 #include "CommandCompiler.h"
 
-constexpr int MAX_HISTORY{ 60 };
+constexpr int MAX_HISTORY{ 120 };
 
 struct InputFrame {
   uint32_t pressedBits;

@@ -64,6 +64,7 @@ int main (int argc, char *argv[]) {
       }
 
       frameCount++;
+      printf("fc:%d\n", frameCount);
     }
   }
 

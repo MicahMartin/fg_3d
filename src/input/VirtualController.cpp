@@ -31,6 +31,16 @@ void VirtualController::update(uint32_t input){
   InputFrame& currentFrame = inputHistory[0];
   currentFrame.pressedBits = changedButtons & currentState;
   currentFrame.releasedBits = changedButtons & prevState;
+
+  // Extract cardinal (directional) parts:
+  uint32_t prevStickState = prevState & Input::DIR_MASK;
+  uint32_t currentStickState = currentState & Input::DIR_MASK;
+
+  if (prevStickState != currentStickState) {
+    if (currentStickState == 0) {
+      currentFrame.pressedBits |= Input::NOINPUT;
+    }   
+  }
 }
 
 bool VirtualController::isPressed(uint32_t input, bool strict) {
@@ -66,13 +76,13 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
 
     switch (ins.opcode) {
       case OP_PRESS: {
-        // Check for a press: find a frame from frameOffset where the condition is met.
+        // printf("looking for %d\n", ins.operand);
         int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset);
         result = (matchedFrame >= 0);
         if (result) {
-          printf("Found soumn press %d\n", ins.operand);
-            // Advance the offset to the matching frame.
-            frameOffset = matchedFrame;
+          // printf("found %d, offset:%d\n", ins.operand, matchedFrame);
+          // Advance the offset to the matching frame.
+          frameOffset = matchedFrame;
         }
         break;
       }
@@ -104,7 +114,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
       }
       case OP_END: {
           // End-of-command marker: we finalize the overall result.
-          overallResult = overallResult && result;
+          printf("we made it to the end, wtf? %d\n", overallResult);
           return overallResult;
       }
       default: {
@@ -157,7 +167,7 @@ bool VirtualController::strictMatch(uint32_t bitsToCheck, uint32_t query) {
 }
 
 int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset){
-  for (int i = startOffset; i < 8; ++i) {
+  for (int i = startOffset; i < 16; ++i) {
     if (wasPressed(operand, strict, pressed, i)) 
       return i;
   }

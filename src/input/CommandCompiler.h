@@ -27,11 +27,11 @@ public:
 
   void init(const char* path);
   const CommandCode* getCommand(int index) const;
+  std::string opcodeToString(CommandOp opcode);
 
 private:
   void compile(const char* inputString, bool clears);
   CommandCode compileNode();
-  std::string opcodeToString(CommandOp opcode);
   void printCode(const CommandCode& code);
 
   std::vector<CommandCode> commands;
