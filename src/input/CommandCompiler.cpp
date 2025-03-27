@@ -102,7 +102,6 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
 CommandCode CommandCompiler::compileNode() {
   CommandCode bytecode;
   
-  std::vector<CommandIns> instructions;
   // Local modifier flags to apply only to the next input token.
   bool nonStrict = false;    // Set by CTOKEN_ANY (@)
   bool releaseFlag = false;  // Set by CTOKEN_RELEASED (~)

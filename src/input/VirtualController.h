@@ -29,7 +29,7 @@ private:
   void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
   uint32_t cleanSOCD(uint32_t input);
   bool strictMatch(uint32_t bitsToCheck, uint32_t query);
-  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset);
+  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen);
 
   CommandCompiler commandCompiler;
   InputFrame inputHistory[MAX_HISTORY];

@@ -50,7 +50,7 @@ int main (int argc, char *argv[]) {
       }
 
       vc.update(constructSdlKeyboardInput());
-      if (vc.checkCommand(2, true)) {
+      if (vc.checkCommand(0, true)) {
         quit = true;
       }
 

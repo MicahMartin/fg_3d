@@ -73,21 +73,19 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
     bool strict = ins.opcode & NONSTRICT_FLAG;
     bool negated = ins.opcode & NOT_FLAG;
     bool result = false;  // Result for this instruction.
+    int buffLen = 16;
 
     switch (ins.opcode) {
       case OP_PRESS: {
-        // printf("looking for %d\n", ins.operand);
-        int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset);
+        int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset, buffLen);
         result = (matchedFrame >= 0);
         if (result) {
-          // printf("found %d, offset:%d\n", ins.operand, matchedFrame);
-          // Advance the offset to the matching frame.
           frameOffset = matchedFrame;
         }
         break;
       }
       case OP_RELEASE: {
-        int matchedFrame = findMatchingFrame(ins.operand, strict, false, frameOffset);
+        int matchedFrame = findMatchingFrame(ins.operand, strict, false, frameOffset, buffLen);
         result = (matchedFrame >= 0);
         if (result) {
             frameOffset = matchedFrame;
@@ -166,8 +164,8 @@ bool VirtualController::strictMatch(uint32_t bitsToCheck, uint32_t query) {
   return dirMatch && btnMatch;
 }
 
-int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset){
-  for (int i = startOffset; i < 16; ++i) {
+int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen){
+  for (int i = startOffset; i < buffLen; ++i) {
     if (wasPressed(operand, strict, pressed, i)) 
       return i;
   }
