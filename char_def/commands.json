@@ -1,5 +1,6 @@
 {
   "commands": [
+    {"name": "tester", "clears": true, "command":"D"},
     {"name": "236L", "clears": true, "command":"~D, DF, F, LP"},
     {"name": "214L", "clears": true, "command":"~D, DB, B, LP"},
     {"name": "dash", "clears": false, "command":"F, N, F"}

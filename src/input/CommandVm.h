@@ -7,8 +7,8 @@ enum CommandOp : uint8_t {
   OP_RELEASE,    // Check if a button was released (modifier '~')
   OP_HOLD,       // Check if a button is held (modifier '*')
   OP_DELAY,      // Enforce a timing constraint (e.g., "8" frames)
-  OP_AND,        // Logical AND operator (binary)
-  OP_OR,         // Logical OR operator (binary)
+  OP_AND,        // Logical AND operator
+  OP_OR,         // Logical OR operator
   OP_END         // End of command marker
 };
 
@@ -24,7 +24,7 @@ struct CommandCode {
 };
 
 // Modifier flag constants (pick bits that do not conflict with your input masks)
-constexpr uint32_t NONSTRICT_FLAG = 0x8000; // set by '@'
+constexpr uint32_t STRICT_FLAG = 0x8000; // set by '@'
 constexpr uint32_t NOT_FLAG       = 0x4000; // set by '!'
 
 // each 'commandString' is a descriptor for a sequence of bytecode instructions.

@@ -56,7 +56,7 @@ void CommandCompiler::printCode(const CommandCode& command) {
               << " (";
 
     // Extract input mask and modifier flags
-    bool isNonStrict = instruction.operand & NONSTRICT_FLAG;
+    bool isNonStrict = instruction.operand & STRICT_FLAG;
     bool isNegated = instruction.operand & NOT_FLAG;
 
     // Print extracted components
@@ -90,7 +90,8 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
       currentToken++;
     }
   }
-  // Mark the end of the command.
+  // Mark the end of the command (at the start, since we reverse - iterate the bytecode.
+  std::reverse(code.instructions.begin(), code.instructions.end());
   code.instructions.push_back({ OP_END, 0 });
 
   commands.push_back(code);
@@ -103,7 +104,7 @@ CommandCode CommandCompiler::compileNode() {
   CommandCode bytecode;
   
   // Local modifier flags to apply only to the next input token.
-  bool nonStrict = false;    // Set by CTOKEN_ANY (@)
+  bool strictFlag = false;    // Set by CTOKEN_ANY (@)
   bool releaseFlag = false;  // Set by CTOKEN_RELEASED (~)
   bool heldFlag = false;     // Set by CTOKEN_HELD (*)
   bool notFlag = false;      // Set by CTOKEN_NOT (!)
@@ -112,7 +113,7 @@ CommandCode CommandCompiler::compileNode() {
   while (currentToken->type != CTOKEN_DELIM && currentToken->type != CTOKEN_END) {
     switch (currentToken->type) {
       case CTOKEN_ANY:
-        nonStrict = true;
+        strictFlag = true;
         currentToken++;
         break;
       case CTOKEN_RELEASED:
@@ -153,18 +154,18 @@ CommandCode CommandCompiler::compileNode() {
         }
         // Construct the final operand: combine base mask with modifier flags.
         uint32_t finalOperand = baseMask;
-        if (nonStrict) {
-            finalOperand |= NONSTRICT_FLAG;
+        if (strictFlag) {
+          finalOperand |= STRICT_FLAG;
         }
         if (notFlag) {
-            finalOperand |= NOT_FLAG;
+          finalOperand |= NOT_FLAG;
         }
         
         // Emit the instruction.
         bytecode.instructions.push_back({ opcode, finalOperand });
         
         // Reset modifier flags (they apply only to this token).
-        nonStrict = false;
+        strictFlag = false;
         releaseFlag = false;
         heldFlag = false;
         notFlag = false;

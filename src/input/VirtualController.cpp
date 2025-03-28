@@ -68,19 +68,21 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
   int frameOffset = 0;       // Start checking from the most recent frame.
   bool overallResult = true; // This will accumulate the results of all instructions.
 
-  // Iterate over each instruction in the command's bytecode.
+  // Iterate over each instruction in the command's bytecode.seth rogan
   for (const auto& ins : code->instructions) {
-    bool strict = ins.opcode & NONSTRICT_FLAG;
+    bool strict = ins.opcode & STRICT_FLAG;
     bool negated = ins.opcode & NOT_FLAG;
     bool result = false;  // Result for this instruction.
     int buffLen = 16;
 
+    printf("checking %s, operand:%d, strict:%d\n", commandCompiler.opcodeToString(ins.opcode).c_str(), ins.operand, strict);
     switch (ins.opcode) {
       case OP_PRESS: {
         int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset, buffLen);
         result = (matchedFrame >= 0);
         if (result) {
           frameOffset = matchedFrame;
+          printf("found at offset %d\n", frameOffset);
         }
         break;
       }
@@ -88,21 +90,18 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
         int matchedFrame = findMatchingFrame(ins.operand, strict, false, frameOffset, buffLen);
         result = (matchedFrame >= 0);
         if (result) {
-            frameOffset = matchedFrame;
+          frameOffset = matchedFrame;
         }
         break;
       }
       case OP_HOLD: {
+        printf("Checking isPressed %d, %d\n", ins.operand, strict);
         result = isPressed(ins.operand, strict);
         break;
       }
-      case OP_DELAY: {
-      }
       case OP_AND: {
-          // For a simple sequential design, an AND operator is implicit;
-          // here we just mark it as passing.
-          result = true;
-          break;
+        result = true;
+        break;
       }
       case OP_OR: {
           // For OR, a proper implementation would combine alternate paths.
@@ -170,5 +169,4 @@ int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pre
       return i;
   }
   return -1;
-
 }
