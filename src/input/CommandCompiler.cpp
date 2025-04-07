@@ -23,7 +23,6 @@ void CommandCompiler::init(const char* path) {
     printf("new command!\n");
     compile(commandObj.command.c_str(), commandObj.clears);
   }
-
   printf("done compiling commands\n");
 }
 
@@ -52,7 +51,7 @@ void CommandCompiler::printCode(const CommandCode& command) {
   
   for (const auto& instruction : command.instructions) {
     std::cout << std::setw(12) << std::left << opcodeToString(instruction.opcode)
-              << " Operand: 0x" << std::hex << std::setw(4) << std::setfill('0') << instruction.operand
+              << " Operand: 0x" << std::hex << std::setw(4) << std::setfill(' ') << instruction.operand
               << " (";
 
     // Extract input mask and modifier flags

@@ -75,7 +75,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
     bool result = false;  // Result for this instruction.
     int buffLen = 16;
 
-    printf("checking %s, operand:%d, strict:%d\n", commandCompiler.opcodeToString(ins.opcode).c_str(), ins.operand, strict);
+    // printf("checking %s, operand:%d, strict:%d\n", commandCompiler.opcodeToString(ins.opcode).c_str(), ins.operand, strict);
     switch (ins.opcode) {
       case OP_PRESS: {
         int matchedFrame = findMatchingFrame(ins.operand, strict, true, frameOffset, buffLen);
