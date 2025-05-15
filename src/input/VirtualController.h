@@ -31,9 +31,9 @@ private:
   bool strictMatch(uint32_t bitsToCheck, uint32_t query);
   int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen);
 
-  CommandCompiler commandCompiler;
+  uint32_t  currentState{ 0 }, 
+            prevState{ 0 }, 
+            noChangeCounter{ 0 };
   InputFrame inputHistory[MAX_HISTORY];
-  uint32_t currentState{ 0 };
-  uint32_t prevState{ 0 };
-  int noChangeCounter{ 0 };
+  CommandCompiler commandCompiler;
 };

@@ -1,6 +1,7 @@
 #include "VirtualController.h"
 #include "CommandVm.h"
 #include "Input.h"
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -36,10 +37,8 @@ void VirtualController::update(uint32_t input){
   uint32_t prevStickState = prevState & Input::DIR_MASK;
   uint32_t currentStickState = currentState & Input::DIR_MASK;
 
-  if (prevStickState != currentStickState) {
-    if (currentStickState == 0) {
-      currentFrame.pressedBits |= Input::NOINPUT;
-    }   
+  if ((prevStickState != currentStickState) && currentStickState == 0) {
+    currentFrame.pressedBits |= Input::NOINPUT;
   }
 }
 
@@ -82,7 +81,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
         result = (matchedFrame >= 0);
         if (result) {
           frameOffset = matchedFrame;
-          printf("found at offset %d\n", frameOffset);
+          // printf("found at offset %d\n", frameOffset);
         }
         break;
       }
@@ -95,7 +94,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
         break;
       }
       case OP_HOLD: {
-        printf("Checking isPressed %d, %d\n", ins.operand, strict);
+        // printf("Checking isPressed %d, %d\n", ins.operand, strict);
         result = isPressed(ins.operand, strict);
         break;
       }
@@ -111,7 +110,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
       }
       case OP_END: {
           // End-of-command marker: we finalize the overall result.
-          printf("we made it to the end, wtf? %d\n", overallResult);
+          // printf("we made it to the end, wtf? %d\n", overallResult);
           return overallResult;
       }
       default: {

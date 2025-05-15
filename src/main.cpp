@@ -12,6 +12,7 @@
 #include "SDL3/SDL_timer.h"
 #include "input/VirtualController.h"
 #include "input/Input.h"
+#include <chrono>
 #include <cstdio>
 
 constexpr int cScreenWidth{ 640 };
@@ -48,11 +49,17 @@ int main (int argc, char *argv[]) {
         if (e.type == SDL_EVENT_QUIT) quit = true;
         if (e.type == SDL_EVENT_JOYSTICK_ADDED) openGamePad(e.jdevice.which);
       }
+      int input = constructSdlKeyboardInput();
 
-      vc.update(constructSdlKeyboardInput());
-      if (vc.checkCommand(0, true)) {
-        quit = true;
-      }
+      auto start = std::chrono::high_resolution_clock::now();
+      vc.update(input);
+      auto end = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double, std::milli> elapsed = end - start;
+      printf("update took %f\n", elapsed.count());
+
+      // if (vc.checkCommand(0, true)) {
+      //   quit = true;
+      // }
 
       SDL_FillSurfaceRect(gScreenSurface, nullptr, SDL_MapSurfaceRGB(gScreenSurface, 0xFF, 0xFF, 0xFF));
       SDL_UpdateWindowSurface(gWindow);
@@ -64,7 +71,7 @@ int main (int argc, char *argv[]) {
       }
 
       frameCount++;
-      printf("fc:%d\n", frameCount);
+      // printf("fc:%d\n", frameCount);
     }
   }
 
