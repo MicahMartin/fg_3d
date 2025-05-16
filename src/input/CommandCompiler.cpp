@@ -99,6 +99,13 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
   printCode(code);
 }
 
+auto precedence = [](CommandTokenType t) {
+  switch (t) {
+    case CTOKEN_AND: return 2;
+    case CTOKEN_OR:  return 1;
+    default:         return 0;
+  }
+};
 // This function compiles a sequence of tokens into a CommandBytecode.
 CommandCode CommandCompiler::compileNode() {
   CommandCode bytecode;
@@ -106,20 +113,7 @@ CommandCode CommandCompiler::compileNode() {
   std::vector<CommandIns> outputQueue;
   std::vector<CommandOp>  opStack;
 
-  auto precedence = [&](CommandTokenType t) {
-    switch (t) {
-      case CTOKEN_AND: return 2;
-      case CTOKEN_OR:  return 1;
-      default:         return 0;
-    }
-  };
 
-  auto flushOps = [&]() {
-    while (!opStack.empty()) {
-      outputQueue.push_back({ opStack.back(), 0 });
-      opStack.pop_back();
-    }
-  };
   bool any = false,
   negate = false,
   held = false,
@@ -197,7 +191,10 @@ CommandCode CommandCompiler::compileNode() {
     }
   }
   // 5) end‑of‑subexpr: flush any remaining operators into output
-  flushOps();
+  while (!opStack.empty()) {
+    outputQueue.push_back({ opStack.back(), 0 });
+    opStack.pop_back();
+  }
 
   // 6) append postfix instructions into the returned CommandCode
   bytecode.instructions = std::move(outputQueue);

@@ -67,71 +67,66 @@ bool VirtualController::wasPressedBuffer(uint32_t input, bool strict, bool press
   return false;
 }
 
-bool VirtualController::checkCommand(int index, bool faceRight) {
-  const CommandCode* code = commandCompiler.getCommand(index);
-  int frameOffset = 0;       // Start checking from the most recent frame.
-  bool overallResult = true; // This will accumulate the results of all instructions.
+bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip, int &frameOffset){
+  const CommandIns& ins = code[ip++];
+  bool negated = (ins.operand & NOT_FLAG) != 0;
+  bool any = (ins.operand & ANY_FLAG) != 0;
+  uint32_t operand = ins.operand & OP_MASK;
+  int buffLen = 16;
 
-  // Iterate over each instruction in the command's bytecode.seth rogan
-  for (const auto& ins : code->instructions) {
-    bool any = ins.operand & ANY_FLAG;
-    bool negated = ins.operand & NOT_FLAG;
-    uint32_t operand = ins.operand & 0x3FFFFFFF; // drop the 2 highest bits since we use them as flags
-    bool result = false;  // Result for this instruction.
-    int buffLen = 16;
-
-    // printf("checking %s, operand:%d, strict:%d\n", commandCompiler.opcodeToString(ins.opcode).c_str(), ins.operand, strict);
-    switch (ins.opcode) {
-      case OP_PRESS: {
-        int matchedFrame = findMatchingFrame(operand, !any, true, frameOffset, buffLen);
-        result = (matchedFrame >= 0);
-        if (result) {
-          frameOffset = matchedFrame;
-          // printf("found at offset %d\n", frameOffset);
-        }
-        break;
-      }
-      case OP_RELEASE: {
-        int matchedFrame = findMatchingFrame(operand, !any, false, frameOffset, buffLen);
-        result = (matchedFrame >= 0);
-        if (result) {
-          frameOffset = matchedFrame;
-        }
-        break;
-      }
-      case OP_HOLD: {
-        // printf("Checking isPressed %d, %d\n", ins.operand, strict);
-        result = isPressed(operand, !any);
-        break;
-      }
-      case OP_AND: {
-        result = true;
-        break;
-      }
-      case OP_OR: {
-          // For OR, a proper implementation would combine alternate paths.
-          // As a placeholder, we'll assume the branch passes if overallResult is true.
-          result = true;
-          printf("HOLY FURK\n");
-          break;
-      }
-      case OP_END: {
-          // End-of-command marker: we finalize the overall result.
-          // printf("we made it to the end, wtf? %d\n", overallResult);
-          return overallResult;
-      }
-      default: {
-          // Unrecognized opcode results in failure.
-          result = false;
-          break;
-      }
+  bool val = false;
+  switch (ins.opcode) {
+    case OP_PRESS: {
+      int matchedFrame = findMatchingFrame(operand, !any, true, frameOffset, buffLen);
+      val = (matchedFrame >= 0);
+      if (val) frameOffset = matchedFrame;
+      break;
     }
-    // Combine the result of this instruction into the overall result.
-    overallResult = overallResult && result;
-    // If at any point the overall result is false, we can stop early.
-    if (!overallResult) return false;
+    case OP_RELEASE: {
+      int matchedFrame = findMatchingFrame(operand, !any, false, frameOffset, buffLen);
+      val = (matchedFrame >= 0);
+      if (val) frameOffset = matchedFrame;
+      break;
+    }
+    case OP_HOLD: {
+      val = isPressed(operand, !any);
+      break;
+    }
+    // **binary ops** simply recurse twice:
+    case OP_AND: {
+      bool left = evalPrefix(code, ip, frameOffset);
+      if (!left) return false;     // short‐circuit AND
+      bool right = evalPrefix(code, ip, frameOffset);
+      val = left && right;
+      break;
+    }
+    case OP_OR: {
+      bool left  = evalPrefix(code, ip, frameOffset);
+      bool right = evalPrefix(code, ip, frameOffset);
+      val = left || right;
+      break;
+    }
+
+    default:
+      val = false;  // unknown opcode
+      break;
   }
-  return overallResult;
+  return negated ? !val : val;
+}
+
+bool VirtualController::checkCommand(int index, bool faceRight) {
+  const auto &code = commandCompiler.getCommand(index)->instructions;
+  int frameOffset = 0;
+  int ip = 0;
+
+  // Evaluate *each* top‑level clause (comma‑separated) in turn
+  // until we hit an implicit OP_END or run out of code.
+  while (ip < (int)code.size() && code[ip].opcode != OP_END) {
+    bool clause = evalPrefix(code, ip, frameOffset);
+    if (!clause) 
+    return false;
+  }
+  return true;
 }
 
 std::string VirtualController::printHistory(){
@@ -177,7 +172,7 @@ bool VirtualController::strictMatch(uint32_t bitsToCheck, uint32_t query) {
   return dirMatch && btnMatch;
 }
 
-int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen){
+int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen = 16){
   for (int i = startOffset; i < buffLen; ++i) {
     if (wasPressed(operand, strict, pressed, i)) 
       return i;
