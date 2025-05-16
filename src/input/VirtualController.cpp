@@ -9,36 +9,25 @@
 #include <sys/types.h>
 
 VirtualController::VirtualController(){
-  // for (int i=0; i < MAX_HISTORY; ++i) {
-  //   inputHistory[i] = {
-  //     .pressedBits = 0,
-  //     .releasedBits = 0,
-  //     .validBits = 0xFFFF,
-  //   };
-  // };
-
   commandCompiler.init("./char_def/commands.json");
 };
 
 VirtualController::~VirtualController(){};
 
 void VirtualController::update(uint32_t input){
-  // Clean and assign new current state
   prevState = currentState;
   currentState = cleanSOCD(input);
 
-  // Extract button-only parts
   const uint32_t prevButtons = prevState & Input::BTN_MASK;
   const uint32_t currButtons = currentState & Input::BTN_MASK;
   const uint32_t changedButtons = prevButtons ^ currButtons;
+
   const uint32_t prevStick = prevState & Input::DIR_MASK;
   const uint32_t currStick = currentState & Input::DIR_MASK;
 
   InputFrame currentFrame;
   currentFrame.pressedBits = changedButtons & currButtons;
   currentFrame.releasedBits = changedButtons & prevButtons;
-
-  // Extract direction (stick) parts
 
   if (prevStick != currStick) {
     currentFrame.pressedBits  |= currStick == 0 ? Input::NOINPUT : currStick;
@@ -69,9 +58,11 @@ bool VirtualController::wasPressedBuffer(uint32_t input, bool strict, bool press
 
 bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip, int &frameOffset){
   const CommandIns& ins = code[ip++];
+  uint32_t operand = ins.operand & OP_MASK;
+
   bool negated = (ins.operand & NOT_FLAG) != 0;
   bool any = (ins.operand & ANY_FLAG) != 0;
-  uint32_t operand = ins.operand & OP_MASK;
+
   bool val = false;
   switch (ins.opcode) {
     case OP_PRESS: {
@@ -92,7 +83,7 @@ bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip,
     }
     case OP_AND: {
       bool left = evalPrefix(code, ip, frameOffset);
-      if (!left) return false;     // short‐circuit AND
+      if (!left) return false;
       bool right = evalPrefix(code, ip, frameOffset);
       val = left && right;
       break;
@@ -106,6 +97,7 @@ bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip,
 
     default:
       val = false;  // unknown opcode
+      printf("wtF?\n");
       break;
   }
   return negated ? !val : val;
@@ -133,16 +125,6 @@ std::string VirtualController::printHistory(){
     retString += std::to_string(inputBuffer[i].pressedBits);
   }
   return retString;
-}
-
-void VirtualController::shiftHistory(){
-  std::memmove(&inputHistory[1], &inputHistory[0], sizeof(InputFrame) * (MAX_HISTORY - 1));
-
-  inputHistory[0] = {
-    .pressedBits = 0,
-    .releasedBits = 0,
-    .validBits = 0xFFFF  // All inputs start valid
-  };
 }
 
 uint32_t VirtualController::cleanSOCD(uint32_t input){

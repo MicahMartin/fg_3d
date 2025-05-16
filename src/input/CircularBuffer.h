@@ -14,10 +14,7 @@ public:
   void push(const T& elem){
     buffer[next] = elem;
     next++;
-    // next = 1
-    // next = 2
     next = next % N;
-    // next = 1 % 6, = 1
   }
 
   const T& front() const {
@@ -36,10 +33,7 @@ public:
     }
     return buffer[head - index];
   };
-  // CircularBuffer(CircularBuffer &&) = default;
-  // CircularBuffer(const CircularBuffer &) = default;
-  // CircularBuffer &operator=(CircularBuffer &&) = default;
-  // CircularBuffer &operator=(const CircularBuffer &) = default;
+
   ~CircularBuffer(){};
 
 private:
