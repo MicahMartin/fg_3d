@@ -1,7 +1,5 @@
 #include "VirtualController.h"
 #include "CommandVm.h"
-#include "Input.h"
-#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -117,6 +115,26 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
     return false;
   }
   return true;
+}
+
+VCState VirtualController::save(){
+  VCState state;
+
+  state.currentState = currentState;
+  state.prevState = prevState;
+  state.inputBuffNext = inputBuffer.next;
+  std::memcpy(state.inputBuff, inputBuffer.buffer, sizeof (state.inputBuff));
+  
+  return state;
+}
+
+void VirtualController::load(VCState const& state){
+
+  currentState = state.currentState;
+  prevState = state.prevState;
+  inputBuffer.next = state.inputBuffNext;
+
+  std::memcpy(inputBuffer.buffer, state.inputBuff, sizeof (inputBuffer.buffer));
 }
 
 std::string VirtualController::printHistory(){

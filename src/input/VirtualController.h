@@ -2,13 +2,12 @@
 #include <cstdint>
 #include "CommandCompiler.h"
 #include "CircularBuffer.h"
+#include "Input.h"
 
-constexpr int MAX_HISTORY{ 120 };
-
-struct InputFrame {
-  uint32_t pressedBits;
-  uint32_t releasedBits;
-  uint32_t validBits;
+struct VCState {
+  uint32_t currentState{ 0 }, prevState{ 0 };
+  InputFrame inputBuff[MAX_HISTORY];
+  int inputBuffNext;
 };
 
 class VirtualController {
@@ -22,6 +21,10 @@ public:
 
   void update(uint32_t input);
   bool checkCommand(int index, bool faceRight);
+
+  VCState save();
+  void load(VCState const& state);
+
   std::string printHistory();
 
 private:
@@ -37,6 +40,6 @@ private:
   CommandCompiler commandCompiler;
 
   // stateful
-  CircularBuffer<MAX_HISTORY, InputFrame> inputBuffer;
+  CircularBuffer inputBuffer;
   uint32_t currentState{ 0 }, prevState{ 0 };
 };

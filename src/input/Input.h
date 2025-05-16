@@ -36,3 +36,11 @@ namespace Input {
   };
 }
 
+constexpr int MAX_HISTORY{ 120 };
+
+struct InputFrame {
+  uint32_t pressedBits;
+  uint32_t releasedBits;
+  uint32_t validBits;
+};
+
