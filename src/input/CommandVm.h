@@ -24,8 +24,8 @@ struct CommandCode {
 };
 
 // Modifier flag constants (pick bits that do not conflict with your input masks)
-constexpr uint32_t STRICT_FLAG = 0x8000; // set by '@'
-constexpr uint32_t NOT_FLAG       = 0x4000; // set by '!'
+constexpr uint32_t ANY_FLAG = 0x80000000; // set by '@'
+constexpr uint32_t NOT_FLAG       = 0x40000000; // set by '!'
 
 // each 'commandString' is a descriptor for a sequence of bytecode instructions.
 // P | ~P = ((wasPressed(LP)) || (wasReleased(LP)))

@@ -12,7 +12,6 @@
 #include "SDL3/SDL_timer.h"
 #include "input/VirtualController.h"
 #include "input/Input.h"
-#include <chrono>
 #include <cstdio>
 
 constexpr int cScreenWidth{ 640 };
@@ -51,15 +50,11 @@ int main (int argc, char *argv[]) {
       }
       int input = constructSdlKeyboardInput();
 
-      auto start = std::chrono::high_resolution_clock::now();
       vc.update(input);
-      auto end = std::chrono::high_resolution_clock::now();
-      std::chrono::duration<double, std::milli> elapsed = end - start;
-      printf("update took %f\n", elapsed.count());
 
-      // if (vc.checkCommand(0, true)) {
-      //   quit = true;
-      // }
+      if (vc.checkCommand(1, true)) {
+        quit = true;
+      }
 
       SDL_FillSurfaceRect(gScreenSurface, nullptr, SDL_MapSurfaceRGB(gScreenSurface, 0xFF, 0xFF, 0xFF));
       SDL_UpdateWindowSurface(gWindow);
@@ -120,6 +115,9 @@ int constructSdlKeyboardInput(){
   const bool* keyStates = SDL_GetKeyboardState(nullptr);
   if (keyStates[SDL_SCANCODE_A]) {
     retVal |= Input::LIGHT_P;
+  }
+  if (keyStates[SDL_SCANCODE_S]) {
+    retVal |= Input::LIGHT_K;
   }
   if (keyStates[SDL_SCANCODE_DOWN]) {
     retVal |= Input::DOWN;

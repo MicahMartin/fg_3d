@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "CommandCompiler.h"
+#include "CircularBuffer.h"
 
 constexpr int MAX_HISTORY{ 120 };
 
@@ -24,6 +25,7 @@ public:
   bool wasPressed(uint32_t input, bool strict = true, bool pressed = true, int offset = 0);
   bool wasPressedBuffer(uint32_t input, bool strict = true, bool pressed = true, int buffLen = 2);
   bool checkCommand(int index, bool faceRight);
+  std::string printHistory();
 
 private:
   void shiftHistory(); // We could use the old school ring buffer approach, but why? we flatten it every frame to serialize anyway
@@ -36,4 +38,5 @@ private:
             noChangeCounter{ 0 };
   InputFrame inputHistory[MAX_HISTORY];
   CommandCompiler commandCompiler;
+  CircularBuffer<MAX_HISTORY, InputFrame> inputBuffer;
 };

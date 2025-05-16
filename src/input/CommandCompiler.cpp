@@ -1,5 +1,6 @@
 #include "CommandCompiler.h"
 #include "CommandScanner.h"
+#include "CommandVm.h"
 #include <cstdio>
 #include <cstdint>
 #include <fstream>
@@ -55,7 +56,7 @@ void CommandCompiler::printCode(const CommandCode& command) {
               << " (";
 
     // Extract input mask and modifier flags
-    bool isNonStrict = instruction.operand & STRICT_FLAG;
+    bool isNonStrict = instruction.operand & ANY_FLAG;
     bool isNegated = instruction.operand & NOT_FLAG;
 
     // Print extracted components
@@ -101,102 +102,105 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
 // This function compiles a sequence of tokens into a CommandBytecode.
 CommandCode CommandCompiler::compileNode() {
   CommandCode bytecode;
-  
-  // Local modifier flags to apply only to the next input token.
-  bool strictFlag = false;    // Set by CTOKEN_ANY (@)
-  bool releaseFlag = false;  // Set by CTOKEN_RELEASED (~)
-  bool heldFlag = false;     // Set by CTOKEN_HELD (*)
-  bool notFlag = false;      // Set by CTOKEN_NOT (!)
-  
+  std::vector<CommandToken> expression;
+  std::vector<CommandIns> outputQueue;
+  std::vector<CommandOp>  opStack;
+
+  auto precedence = [&](CommandTokenType t) {
+    switch (t) {
+      case CTOKEN_AND: return 2;
+      case CTOKEN_OR:  return 1;
+      default:         return 0;
+    }
+  };
+
+  auto flushOps = [&]() {
+    while (!opStack.empty()) {
+      outputQueue.push_back({ opStack.back(), 0 });
+      opStack.pop_back();
+    }
+  };
+  bool any = false,
+  negate = false,
+  held = false,
+  release = false;
   // Process tokens until we hit a delimiter (CTOKEN_DELIM) or the end token.
   while (currentToken->type != CTOKEN_DELIM && currentToken->type != CTOKEN_END) {
-    switch (currentToken->type) {
+    expression.push_back(*currentToken);
+    currentToken++;
+  }
+
+  for (const CommandToken &tok : expression) {
+    switch (tok.type) {
       case CTOKEN_ANY:
-        strictFlag = true;
-        currentToken++;
-        break;
-      case CTOKEN_RELEASED:
-        releaseFlag = true;
-        currentToken++;
-        break;
-      case CTOKEN_HELD:
-        heldFlag = true;
-        currentToken++;
+        any = true;
         break;
       case CTOKEN_NOT:
-        notFlag = true;
-        currentToken++;
+        negate = true;
         break;
-      // For actual input tokens.
-      case CTOKEN_NEUTRAL:
-      case CTOKEN_FORWARD:
-      case CTOKEN_DOWNFORWARD:
-      case CTOKEN_UPFORWARD:
-      case CTOKEN_BACK:
-      case CTOKEN_DOWNBACK:
-      case CTOKEN_UPBACK:
-      case CTOKEN_UP:
-      case CTOKEN_DOWN:
-      case CTOKEN_LP:
-      case CTOKEN_LK:
-      case CTOKEN_MP:
-      case CTOKEN_MK: {
-        // Get the base input mask from the token.
-        uint32_t baseMask = parseInputMask(currentToken);
-        
-        // Choose the opcode based on modifier flags.
-        CommandOp opcode = OP_PRESS; // Default is a press check.
-        if (heldFlag) {
-          opcode = OP_HOLD;
-        } else if (releaseFlag) {
-          opcode = OP_RELEASE;
-        }
-        // Construct the final operand: combine base mask with modifier flags.
-        uint32_t finalOperand = baseMask;
-        if (strictFlag) {
-          finalOperand |= STRICT_FLAG;
-        }
-        if (notFlag) {
-          finalOperand |= NOT_FLAG;
-        }
-        
-        // Emit the instruction.
-        bytecode.instructions.push_back({ opcode, finalOperand });
-        
-        // Reset modifier flags (they apply only to this token).
-        strictFlag = false;
-        releaseFlag = false;
-        heldFlag = false;
-        notFlag = false;
-        
-        currentToken++;
+      case CTOKEN_HELD:
+        held = true;
+        break;
+      case CTOKEN_RELEASED:
+        release = true;
+        break;
+      case CTOKEN_NEUTRAL: case CTOKEN_FORWARD: case CTOKEN_BACK:
+      case CTOKEN_UP: case CTOKEN_DOWN: case CTOKEN_UPFORWARD:
+      case CTOKEN_UPBACK: case CTOKEN_DOWNFORWARD: case CTOKEN_DOWNBACK:
+      case CTOKEN_LP: case CTOKEN_LK: case CTOKEN_MP: case CTOKEN_MK: {
+        // NOTE: simpler to set flags as you scan, but here we assume
+        //       that parser already kept modifiers immediately before.
+        // --- determine opcode:
+        CommandOp op = OP_PRESS;
+        printf("BRO WHAT DE FUK?? any:%d, negate:%d, held:%d, release:%d\n", any, negate, held, release);
+        // if (held)    op = OP_HOLD;
+        if (release) op = OP_RELEASE;
+        // --- build final mask:
+        uint32_t mask = parseInputMask(&tok);
+        if (any)    mask |= ANY_FLAG;
+        if (negate)   mask |= NOT_FLAG;
+
+        // --- push the operand instruction
+        outputQueue.push_back({ op, mask });
+        any = false;
+        negate = false;
+        held = false;
+        release = false;
         break;
       }
-      case CTOKEN_NUMBER: {
-        // A numeric token indicates a delay (timing constraint).
-        uint32_t delay = parseNumber(currentToken);
-        bytecode.instructions.push_back({ OP_DELAY, delay });
-        currentToken++;
-        break;
-      }
-      // Handle binary operators.
-      case CTOKEN_AND: {
-        bytecode.instructions.push_back({ OP_AND, 0 });
-        currentToken++;
-        break;
-      }
+      // — OPERATORS: handle '&' and '|' by precedence
+      case CTOKEN_AND:
       case CTOKEN_OR: {
-        bytecode.instructions.push_back({ OP_OR, 0 });
-        currentToken++;
+        CommandOp thisOp = (tok.type == CTOKEN_AND ? OP_AND : OP_OR);
+        int thisPrec    = precedence(tok.type);
+
+        // pop any operators of >= precedence
+        while (!opStack.empty()) {
+          // need inverse‑map from CommandOp back to token type for precedence
+          CommandOp topOp = opStack.back();
+          CommandTokenType topTok = (topOp == OP_AND ? CTOKEN_AND : topOp == OP_OR  ? CTOKEN_OR : CTOKEN_END);
+          if (precedence(topTok) >= thisPrec) {
+            outputQueue.push_back({ topOp, 0 });
+            opStack.pop_back();
+          } else {
+            break;
+          }
+        }
+        // push the new operator
+        opStack.push_back(thisOp);
         break;
       }
-      default: {
-        // Skip any unexpected tokens.
-        currentToken++;
+
+      default:
+        // ignore ANY, NOT, HELD, RELEASED here — assume folded into operands
         break;
-      }
     }
   }
-  
+  // 5) end‑of‑subexpr: flush any remaining operators into output
+  flushOps();
+
+  // 6) append postfix instructions into the returned CommandCode
+  bytecode.instructions = std::move(outputQueue);
+
   return bytecode;
 }

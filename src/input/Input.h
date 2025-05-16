@@ -32,7 +32,7 @@ namespace Input {
     HORIZONTAL_SOCD = (LEFT | RIGHT),
     VERTICAL_SOCD = (UP | DOWN),
     DIR_MASK = 0x000F,
-    BTN_MASK = 0xFFF0
+    BTN_MASK = 0x0FF0
   };
 }
 
