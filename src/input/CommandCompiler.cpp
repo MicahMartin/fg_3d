@@ -77,20 +77,14 @@ void CommandCompiler::compile(const char* inputString, bool clears) {
   std::vector<CommandToken> tokens = commandScanner.scan(inputString);
   currentToken = &tokens[0];
 
-  // Loop until we reach the end token.
   while (currentToken->type != CTOKEN_END) {
-    // Compile a sub-node into a block of instructions.
     CommandCode subCode = compileNode();
-    // Append the subnode instructions into our overall code.
-    code.instructions.insert(code.instructions.end(), 
-                               subCode.instructions.begin(), 
-                               subCode.instructions.end());
-    // If the next token is a delimiter, skip it.
+    code.instructions.insert(code.instructions.end(), subCode.instructions.begin(), subCode.instructions.end());
     if (currentToken->type == CTOKEN_DELIM) {
       currentToken++;
     }
   }
-  // Mark the end of the command (at the start, since we reverse - iterate the bytecode.
+  // we want to search from the end of a command first since its the latest button press
   std::reverse(code.instructions.begin(), code.instructions.end());
   code.instructions.push_back({ OP_END, 0 });
 
@@ -142,20 +136,16 @@ CommandCode CommandCompiler::compileNode() {
       case CTOKEN_UP: case CTOKEN_DOWN: case CTOKEN_UPFORWARD:
       case CTOKEN_UPBACK: case CTOKEN_DOWNFORWARD: case CTOKEN_DOWNBACK:
       case CTOKEN_LP: case CTOKEN_LK: case CTOKEN_MP: case CTOKEN_MK: {
-        // NOTE: simpler to set flags as you scan, but here we assume
-        //       that parser already kept modifiers immediately before.
-        // --- determine opcode:
         CommandOp op = OP_PRESS;
-        printf("BRO WHAT DE FUK?? any:%d, negate:%d, held:%d, release:%d\n", any, negate, held, release);
-        // if (held)    op = OP_HOLD;
+        if (held) op = OP_HOLD;
         if (release) op = OP_RELEASE;
-        // --- build final mask:
-        uint32_t mask = parseInputMask(&tok);
-        if (any)    mask |= ANY_FLAG;
-        if (negate)   mask |= NOT_FLAG;
 
-        // --- push the operand instruction
-        outputQueue.push_back({ op, mask });
+        uint32_t operand = parseInputMask(&tok);
+        if (any) operand |= ANY_FLAG;
+        if (negate) operand |= NOT_FLAG;
+
+        outputQueue.push_back({ op, operand });
+        // clear flags
         any = false;
         negate = false;
         held = false;
@@ -166,14 +156,15 @@ CommandCode CommandCompiler::compileNode() {
       case CTOKEN_AND:
       case CTOKEN_OR: {
         CommandOp thisOp = (tok.type == CTOKEN_AND ? OP_AND : OP_OR);
-        int thisPrec    = precedence(tok.type);
+        int thisPrec = precedence(tok.type);
 
-        // pop any operators of >= precedence
         while (!opStack.empty()) {
-          // need inverse‑map from CommandOp back to token type for precedence
+          // top op baby
           CommandOp topOp = opStack.back();
+          // top tok babbyy
           CommandTokenType topTok = (topOp == OP_AND ? CTOKEN_AND : topOp == OP_OR  ? CTOKEN_OR : CTOKEN_END);
           if (precedence(topTok) >= thisPrec) {
+            // finegle the bagle
             outputQueue.push_back({ topOp, 0 });
             opStack.pop_back();
           } else {
@@ -186,17 +177,14 @@ CommandCode CommandCompiler::compileNode() {
       }
 
       default:
-        // ignore ANY, NOT, HELD, RELEASED here — assume folded into operands
         break;
     }
   }
-  // 5) end‑of‑subexpr: flush any remaining operators into output
+
   while (!opStack.empty()) {
     outputQueue.push_back({ opStack.back(), 0 });
     opStack.pop_back();
   }
-
-  // 6) append postfix instructions into the returned CommandCode
   bytecode.instructions = std::move(outputQueue);
 
   return bytecode;

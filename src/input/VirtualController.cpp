@@ -31,14 +31,14 @@ void VirtualController::update(uint32_t input){
   const uint32_t prevButtons = prevState & Input::BTN_MASK;
   const uint32_t currButtons = currentState & Input::BTN_MASK;
   const uint32_t changedButtons = prevButtons ^ currButtons;
+  const uint32_t prevStick = prevState & Input::DIR_MASK;
+  const uint32_t currStick = currentState & Input::DIR_MASK;
 
   InputFrame currentFrame;
   currentFrame.pressedBits = changedButtons & currButtons;
   currentFrame.releasedBits = changedButtons & prevButtons;
 
   // Extract direction (stick) parts
-  const uint32_t prevStick = prevState & Input::DIR_MASK;
-  const uint32_t currStick = currentState & Input::DIR_MASK;
 
   if (prevStick != currStick) {
     currentFrame.pressedBits  |= currStick == 0 ? Input::NOINPUT : currStick;
@@ -72,18 +72,16 @@ bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip,
   bool negated = (ins.operand & NOT_FLAG) != 0;
   bool any = (ins.operand & ANY_FLAG) != 0;
   uint32_t operand = ins.operand & OP_MASK;
-  int buffLen = 16;
-
   bool val = false;
   switch (ins.opcode) {
     case OP_PRESS: {
-      int matchedFrame = findMatchingFrame(operand, !any, true, frameOffset, buffLen);
+      int matchedFrame = findMatchingFrame(operand, !any, true, frameOffset);
       val = (matchedFrame >= 0);
       if (val) frameOffset = matchedFrame;
       break;
     }
     case OP_RELEASE: {
-      int matchedFrame = findMatchingFrame(operand, !any, false, frameOffset, buffLen);
+      int matchedFrame = findMatchingFrame(operand, !any, false, frameOffset);
       val = (matchedFrame >= 0);
       if (val) frameOffset = matchedFrame;
       break;
@@ -92,7 +90,6 @@ bool VirtualController::evalPrefix(const std::vector<CommandIns>& code, int &ip,
       val = isPressed(operand, !any);
       break;
     }
-    // **binary ops** simply recurse twice:
     case OP_AND: {
       bool left = evalPrefix(code, ip, frameOffset);
       if (!left) return false;     // short‐circuit AND
@@ -122,6 +119,7 @@ bool VirtualController::checkCommand(int index, bool faceRight) {
   // Evaluate *each* top‑level clause (comma‑separated) in turn
   // until we hit an implicit OP_END or run out of code.
   while (ip < (int)code.size() && code[ip].opcode != OP_END) {
+    // remember: Frameoffset is being modified by evalprefix
     bool clause = evalPrefix(code, ip, frameOffset);
     if (!clause) 
     return false;
@@ -172,7 +170,7 @@ bool VirtualController::strictMatch(uint32_t bitsToCheck, uint32_t query) {
   return dirMatch && btnMatch;
 }
 
-int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen = 16){
+int VirtualController::findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen){
   for (int i = startOffset; i < buffLen; ++i) {
     if (wasPressed(operand, strict, pressed, i)) 
       return i;

@@ -32,7 +32,7 @@ private:
   bool evalPrefix(const std::vector<CommandIns>& code, int &ip, int &frameOffset);
   uint32_t cleanSOCD(uint32_t input);
   bool strictMatch(uint32_t bitsToCheck, uint32_t query);
-  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen);
+  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen = 16);
 
   uint32_t  currentState{ 0 }, 
             prevState{ 0 }, 
