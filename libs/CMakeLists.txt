@@ -11,3 +11,6 @@ target_include_directories(libs INTERFACE glaze/include)
 
 # Link dependencies to the interface library
 target_link_libraries(libs INTERFACE SDL3::SDL3)
+
+add_subdirectory(JoltPhysics/Build JoltPhysics_build EXCLUDE_FROM_ALL)
+target_link_libraries(libs INTERFACE Jolt)
