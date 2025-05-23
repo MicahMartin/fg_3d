@@ -1,33 +1,6 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-
-enum CommandOp : uint8_t {
-  OP_PRESS,      // Check if a button is pressed (default)
-  OP_RELEASE,    // Check if a button was released (modifier '~')
-  OP_HOLD,       // Check if a button is held (modifier '*')
-  OP_DELAY,      // Enforce a timing constraint (e.g., "8" frames)
-  OP_AND,        // Logical AND operator
-  OP_OR,         // Logical OR operator
-  OP_END         // End of command marker
-};
-
-struct CommandIns {
-  CommandOp opcode;
-  uint32_t operand; // Represents an input bitmask or delay
-};
-
-// The compiled command, as a contiguous sequence of instructions.
-struct CommandCode {
-  std::vector<CommandIns> instructions;
-  bool clears; // Indicates whether the command clears the input buffer upon execution.
-};
-
-// Modifier flag constants (pick bits that do not conflict with your input masks)
-constexpr uint32_t ANY_FLAG = 0x80000000; // set by '@'
-constexpr uint32_t NOT_FLAG = 0x40000000; // set by '!'
-constexpr uint32_t OP_MASK = 0x3FFFFFFF;
-
 // each 'commandString' is a descriptor for a sequence of bytecode instructions.
 // P | ~P = ((wasPressed(LP)) || (wasReleased(LP)))
 // @F & !D = ((wasPressed(F, strict = false)) && !(wasPressed(D)))
@@ -68,3 +41,30 @@ constexpr uint32_t OP_MASK = 0x3FFFFFFF;
 //  TODO: load from file
 //   "~D, 20DF, 20F, 8LP | 8~LP", // 214P
 // First, we define our simple bytecode instruction set.
+//
+enum CommandOp : uint8_t {
+  OP_PRESS,      // Check if a button is pressed (default)
+  OP_RELEASE,    // Check if a button was released (modifier '~')
+  OP_HOLD,       // Check if a button is held (modifier '*')
+  OP_DELAY,      // Enforce a timing constraint (e.g., "8" frames)
+  OP_AND,        // Logical AND operator
+  OP_OR,         // Logical OR operator
+  OP_END         // End of command marker
+};
+
+struct CommandIns {
+  CommandOp opcode;
+  uint32_t operand; // Represents an input bitmask or delay
+};
+
+// The compiled command, as a contiguous sequence of instructions.
+struct CommandCode {
+  std::vector<CommandIns> instructions;
+  bool clears; // Indicates whether the command clears the input buffer upon execution.
+};
+
+// Modifier flag constants (pick bits that do not conflict with your input masks)
+constexpr uint32_t ANY_FLAG = 0x80000000; // set by '@'
+constexpr uint32_t NOT_FLAG = 0x40000000; // set by '!'
+constexpr uint32_t OP_MASK = 0x3FFFFFFF;
+

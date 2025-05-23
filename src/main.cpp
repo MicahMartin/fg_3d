@@ -1,4 +1,3 @@
-#include "Jolt/Physics/Collision/BroadPhase/BroadPhaseLayer.h"
 #include "SDL3/SDL_error.h"
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_gamepad.h"
@@ -11,23 +10,12 @@
 #include "SDL3/SDL_surface.h"
 #include "SDL3/SDL_video.h"
 #include "SDL3/SDL_timer.h"
+#include "Jolt/Jolt.h"
+
 #include "input/VirtualController.h"
 #include "input/Input.h"
 
 #include <cstdio>
-
-#include <Jolt/Jolt.h>
-
-#include <Jolt/RegisterTypes.h>
-#include <Jolt/Core/Factory.h>
-#include <Jolt/Core/TempAllocator.h>
-#include <Jolt/Core/JobSystemThreadPool.h>
-#include <Jolt/Physics/PhysicsSettings.h>
-#include <Jolt/Physics/PhysicsSystem.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
-#include <Jolt/Physics/Collision/Shape/SphereShape.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Body/BodyActivationListener.h>
 
 constexpr int cScreenWidth{ 640 };
 constexpr int cScreenHeight{ 480 };
@@ -42,69 +30,6 @@ int constructSdlPadInput();
 SDL_Window* gWindow{ nullptr };
 SDL_Surface* gScreenSurface{ nullptr };
 SDL_Gamepad* gamePad{ nullptr };
-
-namespace Layers {
-	static constexpr ObjectLayer NON_MOVING = 0;
-	static constexpr ObjectLayer MOVING = 1;
-	static constexpr ObjectLayer NUM_LAYERS = 2;
-};
-
-class ObjectLayerPairFilterImpl : public JPH::ObjectLayerPairFilter {
-public:
-	virtual bool ShouldCollide(JPH::ObjectLayer inObject1, JPH::ObjectLayer inObject2) const override {
-		switch (inObject1)
-		{
-		case Layers::NON_MOVING:
-			return inObject2 == Layers::MOVING; // Non moving only collides with moving
-		case Layers::MOVING:
-			return true; // Moving collides with everything
-		default:
-			JPH_ASSERT(false);
-			return false;
-		}
-	}
-};
-
-namespace BroadPhaseLayers {
-	static constexpr JPH::BroadPhaseLayer NON_MOVING(0);
-	static constexpr JPH::BroadPhaseLayer MOVING(1);
-	static constexpr uint NUM_LAYERS(2);
-};
-
-class BPLayerInterfaceImpl final : public JPH::BroadPhaseLayerInterface {
-public:
-  BPLayerInterfaceImpl() {
-		// Create a mapping table from object to broad phase layer
-		mObjectToBroadPhase[Layers::NON_MOVING] = BroadPhaseLayers::NON_MOVING;
-		mObjectToBroadPhase[Layers::MOVING] = BroadPhaseLayers::MOVING;
-	}
-
-	virtual uint GetNumBroadPhaseLayers() const override {
-		return BroadPhaseLayers::NUM_LAYERS;
-	}
-  virtual JPH::BroadPhaseLayer GetBroadPhaseLayer(JPH::ObjectLayer inLayer) const override {
-		JPH_ASSERT(inLayer < Layers::NUM_LAYERS);
-		return mObjectToBroadPhase[inLayer];
-	}
-
-private:
-  JPH::BroadPhaseLayer mObjectToBroadPhase[Layers::NUM_LAYERS];
-};
-
-class ObjectVsBroadPhaseLayerFilterImpl : public JPH::ObjectVsBroadPhaseLayerFilter {
-public:
-	virtual bool ShouldCollide(JPH::ObjectLayer inLayer1, JPH::BroadPhaseLayer inLayer2) const override {
-		switch (inLayer1) {
-		case Layers::NON_MOVING:
-			return inLayer2 == BroadPhaseLayers::MOVING;
-		case Layers::MOVING:
-			return true;
-		default:
-			JPH_ASSERT(false);
-			return false;
-		}
-	}
-};
 
 int main (int argc, char *argv[]) {
   int frameCount{0};
@@ -152,27 +77,7 @@ int main (int argc, char *argv[]) {
   return exitCode;
 }
 
-
 bool init(){
-
-  JPH::RegisterDefaultAllocator();
-  JPH::Factory sInstance = *new JPH::Factory;
-  JPH::RegisterTypes();
-  JPH::TempAllocatorImpl temp_allocator(10 * 1024 * 1024);
-  JPH::JobSystemThreadPool job_system(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, std::thread::hardware_concurrency() - 1);
-	const uint cMaxBodies = 1024;
-	const uint cNumBodyMutexes = 0;
-	const uint cMaxBodyPairs = 1024;
-	const uint cMaxContactConstraints = 1024;
-
-	BPLayerInterfaceImpl broad_phase_layer_interface;
-	ObjectVsBroadPhaseLayerFilterImpl object_vs_broadphase_layer_filter;
-	ObjectLayerPairFilterImpl object_vs_object_layer_filter;
-
-	// Now we can create the actual physics system.
-  JPH::PhysicsSystem physics_system;
-	physics_system.Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints, broad_phase_layer_interface, object_vs_broadphase_layer_filter, object_vs_object_layer_filter);
-
   bool success{ true };
 
   if( !SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)){
@@ -189,6 +94,7 @@ bool init(){
 
   return success;
 }
+
 void close(){
   SDL_Log("Goodbye!\n");
   SDL_DestroyWindow(gWindow);
