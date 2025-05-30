@@ -1,11 +1,11 @@
 #pragma once
-#include <cstdint>
-#include "CommandCompiler.h"
 #include "CircularBuffer.h"
+#include "CommandCompiler.h"
 #include "Input.h"
+#include <cstdint>
 
 struct VCState {
-  uint32_t currentState{ 0 }, prevState{ 0 };
+  uint32_t currentState{0}, prevState{0};
   InputFrame inputBuff[MAX_HISTORY];
   int inputBuffNext;
 };
@@ -21,25 +21,29 @@ public:
 
   void update(uint32_t input);
   bool checkCommand(int index, bool faceRight);
+  bool wasPressed(uint32_t input, bool strict = true, bool pressed = true,
+                  int offset = 0);
 
   VCState save();
-  void load(VCState const& state);
+  void load(VCState const &state);
 
   std::string printHistory();
 
 private:
   bool isPressed(uint32_t input, bool strict = true);
-  bool wasPressed(uint32_t input, bool strict = true, bool pressed = true, int offset = 0);
-  bool wasPressedBuffer(uint32_t input, bool strict = true, bool pressed = true, int buffLen = 2);
-  bool evalPrefix(const std::vector<CommandIns>& code, int &ip, int &frameOffset);
+  bool wasPressedBuffer(uint32_t input, bool strict = true, bool pressed = true,
+                        int buffLen = 2);
+  bool evalPrefix(const std::vector<CommandIns> &code, int &ip,
+                  int &frameOffset);
 
   uint32_t cleanSOCD(uint32_t input);
   bool strictMatch(uint32_t bitsToCheck, uint32_t query);
-  int findMatchingFrame(uint32_t operand, bool strict, bool pressed, int startOffset, int buffLen = 16);
+  int findMatchingFrame(uint32_t operand, bool strict, bool pressed,
+                        int startOffset, int buffLen = 16);
 
   CommandCompiler commandCompiler;
 
   // stateful
   CircularBuffer inputBuffer;
-  uint32_t currentState{ 0 }, prevState{ 0 };
+  uint32_t currentState{0}, prevState{0};
 };

@@ -49,23 +49,9 @@ std::string CommandCompiler::opcodeToString(CommandOp opcode) {
 
 void CommandCompiler::printCode(const CommandCode& command) {
   std::cout << "=== Command Bytecode ===\n";
-  
   for (const auto& instruction : command.instructions) {
-    std::cout << std::setw(12) << std::left << opcodeToString(instruction.opcode)
-              << " Operand: 0x" << std::hex << std::setw(4) << std::setfill(' ') << instruction.operand
-              << " (";
-
-    // Extract input mask and modifier flags
-    bool isNonStrict = instruction.operand & ANY_FLAG;
-    bool isNegated = instruction.operand & NOT_FLAG;
-
-    // Print extracted components
-    if (isNonStrict) std::cout << " @";
-    if (isNegated) std::cout << " !";
-    
-    std::cout << ")\n";
+    printf("Command: %X, op:%X\n", instruction.opcode, instruction.operand & OP_MASK);
   }
-
   std::cout << "========================\n";
 }
 

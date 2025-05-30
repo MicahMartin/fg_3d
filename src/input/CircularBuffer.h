@@ -9,6 +9,7 @@ public:
 
   void push(const InputFrame& elem);
   const InputFrame& front() const;
+
   InputFrame& operator[](int index);
 
   int next = 0;
